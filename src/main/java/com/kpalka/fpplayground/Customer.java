@@ -1,23 +1,23 @@
-package com.kpalka.dataclasses;
+package com.kpalka.fpplayground;
 
-import io.vavr.control.Option;
 import lombok.Builder;
 import lombok.Value;
 
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 @Value
 @Builder(toBuilder = true)
-class Consumer {
+class Customer {
 
   @Value
   @Builder(toBuilder = true)
   static class Addrees {
-    private Option<String> line1;
-    private Option<String> line2;
-    private Option<String> postalCode;
-    private Option<String> city;
-    private String country;
+    private Optional<String> line1;
+    private Optional<String> line2;
+    private Optional<String> zipCode;
+    private Optional<String> city;
+    private Optional<String> country;
   }
 
   private String name;
