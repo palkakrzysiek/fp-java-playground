@@ -1,50 +1,17 @@
 package com.kpalka.fpplayground;
 
-import java.time.ZonedDateTime;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-import static java.time.ZoneOffset.UTC;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 
+@Slf4j
 class CountryNormalization {
-  static List<Customer> retrieveConsumers() {
-    return List.of(
-        Customer
-            .builder()
-            .name("John Kovalsky")
-            .address(Customer.Addrees
-                .builder()
-                .line1(of("Warszawska 1"))
-                .line2(empty())
-                .zipCode(of("00-000"))
-                .city(of("Warsaw"))
-                .country(of("Poland"))
-                .build())
-            .active(TRUE)
-            .registeredOn(ZonedDateTime.of(2014, 3, 18, 12, 0, 0, 0, UTC))
-            .build(),
-        Customer
-            .builder()
-            .name("Jan Kowalski")
-            .address(Customer.Addrees
-                .builder()
-                .line1(of("Warszawska 2"))
-                .line2(empty())
-                .zipCode(of("00-001"))
-                .city(of("Warszawa"))
-                .country(of("Polska"))
-                .build())
-            .active(TRUE)
-            .registeredOn(ZonedDateTime.of(2019, 3, 18, 12, 0, 0, 0, UTC))
-            .build()
-    );
-  }
 
-  static List<Customer> deactivateUsers(List<Customer> customers) {
+  static List<Customer> deactivateCustomers(List<Customer> customers) {
     return customers
         .stream()
         .map(customer -> customer
@@ -54,19 +21,37 @@ class CountryNormalization {
         .collect(Collectors.toList());
   }
 
-  static List<Customer> normalizeCountry(List<Customer> customers, String oldVal, String newVal) {
-    return customers
-        .stream()
-        .map(customer -> {
-          final var oldAddress = customer.getAddress();
-          return customer
+  @FunctionalInterface
+  private interface CustomerMapper extends Function<Customer, Customer> {
+  }
+
+  private static CustomerMapper countryRenamer(String oldValue, String newValue) {
+    return customer -> {
+      var oldAddress = customer.getAddress();
+      return customer
+          .toBuilder()
+          .address(oldAddress
               .toBuilder()
-              .address(oldAddress
-                  .toBuilder()
-                  .country(oldAddress.getCountry()
-                      .map(countryName -> countryName.replace(oldVal, newVal)))
-                  .build())
-              .build();
-        }).collect(Collectors.toList());
+              .country(oldAddress
+                  .getCountry()
+                  // don't revert to isPresent which makes the code looks not better than if (x != null) {...}
+                  // remember that Optional<A> has convenient .map(A -> B) and .flatMap(A -> Optional<B>) methods
+                  .map(countryName -> countryName.replace(oldValue, newValue)))
+              .build())
+          .build();
+    };
+  }
+
+  static List<Customer> normalizeCountry(List<Customer> customers) {
+    var oldVal = "Polska";
+    var newVal = "Poland";
+    var result = customers
+        .stream()
+        // as customer is immutable we dont have to worry about changes to the original values in theRenamer, whatever its implementation is...
+        .map(countryRenamer(oldVal, newVal))
+        .collect(Collectors.toList());
+    // ... and can compare the original list to the new list
+    if (log.isDebugEnabled()) log.debug("Normalized countries from {} resulting in {}", customers, result);
+    return result;
   }
 }
