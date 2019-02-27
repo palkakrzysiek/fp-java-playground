@@ -31,7 +31,7 @@ class CountryNormalizationTest {
                 .country(of("Poland"))
                 .build())
             .active(TRUE)
-            .registeredOn(ZonedDateTime.of(2014, 3, 18, 12, 0, 0, 0, UTC))
+            .bornOn(ZonedDateTime.of(2014, 3, 18, 12, 0, 0, 0, UTC))
             .build(),
         Customer
             .builder()
@@ -44,8 +44,8 @@ class CountryNormalizationTest {
                 .city(of("Warszawa"))
                 .country(of("Polska"))
                 .build())
-            .active(TRUE)
-            .registeredOn(ZonedDateTime.of(2019, 3, 18, 12, 0, 0, 0, UTC))
+            .active(FALSE)
+            .bornOn(ZonedDateTime.of(2019, 3, 18, 12, 0, 0, 0, UTC))
             .build()
     );
   }

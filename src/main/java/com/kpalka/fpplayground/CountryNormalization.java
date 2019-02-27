@@ -11,6 +11,8 @@ import static java.lang.Boolean.FALSE;
 @Slf4j
 class CountryNormalization {
 
+  private CountryNormalization() {}
+
   static List<Customer> deactivateCustomers(List<Customer> customers) {
     return customers
         .stream()
@@ -21,6 +23,7 @@ class CountryNormalization {
         .collect(Collectors.toList());
   }
 
+  // the best we can get in a language without type aliases
   @FunctionalInterface
   private interface CustomerMapper extends Function<Customer, Customer> {
   }
@@ -47,7 +50,7 @@ class CountryNormalization {
     var newVal = "Poland";
     var result = customers
         .stream()
-        // as customer is immutable we dont have to worry about changes to the original values in theRenamer, whatever its implementation is...
+        // as customer is immutable we dont have to worry about changes to the original values in the countryRenamer, whatever its implementation is...
         .map(countryRenamer(oldVal, newVal))
         .collect(Collectors.toList());
     // ... and can compare the original list to the new list

@@ -22,6 +22,6 @@ class Customer {
 
   private String name;
   private Addrees address;
-  private ZonedDateTime registeredOn;
+  private ZonedDateTime bornOn;
   private Boolean active;
 }
