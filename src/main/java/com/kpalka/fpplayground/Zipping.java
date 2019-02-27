@@ -88,6 +88,8 @@ class Zipping {
     final var zero = new ComparisionState(customerStateSnapshots.get(0), io.vavr.collection.List.empty());
     final var vavrList = io.vavr.collection.List.ofAll(customerStateSnapshots);
     return vavrList
+        .drop(1)
+        // foldLeft requires the zero element because it's the default one if the list is empty. a data type like NonEmptyList could have a foldLeft implementation which doesn't require the zero value as there will be always at least one element. Unfortunately the proposal to add it (https://github.com/vavr-io/vavr/issues/1244) might have been not too-well motivated and has been rejected
         .foldLeft(zero, (ComparisionState foldAcc, Customer c) ->
             // Such upgrading of accumulator wouldn't be possible had used a List<A> from the Java standard library. Its `add(A elem)` method doesn't return a new list object with the new element, but just a Boolean signaling if the collection has been mutated
             new ComparisionState(c, foldAcc.stateAcc.append(customerDiffWithVavr(foldAcc.lastVale, c))))

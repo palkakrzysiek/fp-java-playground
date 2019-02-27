@@ -73,9 +73,7 @@ class ZippingTest {
 
   @Test
   void customerListDiffWithVavrAndFoldLeftTest() {
-    assertThat(Zipping.compareSubsequentChangesStdLibsOnlyThroughAbomination(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping.compareSubsequentChangesWithFoldLeft(customers)).isEqualTo(expectedChangesDescriptions);
   }
-
-
 
 }
