@@ -1,0 +1,37 @@
+= Dealing with Java's obstacles while switching to FP style
+
+Functional programming promises easy testing reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling program definition with interpretation.
+
+Thus Java constantly gains more features supporting writing code in functional style, starting with 2014's addition of lambdas and streams of collection elements.
+Yet it looks like the language architects are not convinced if fully support that trend by not providing basic combinator methods (zip, zipWith, fold [TO BE CHECKED]) with existing Optional<T> and Stream<T> classes, nor classes that can convey information about a failure like Try<T> or Either<E, T> which limits the possibility of writing more complicated logic without nasty mixture of good old try {}s and mutable elements.
+Here we'll explore a couple of libraries that make it easier to stay with FP side.
+
+The basics – data classes
+It's not an easy task to operate on data classes without a lot of boilerpate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is Immutables (https://mvnrepository.com/artifact/org.immutables/value). A well known, yet controversial library is Lombok (https://mvnrepository.com/artifact/org.projectlombok/lombok). The former generates the code with concrete implementations form abstract classes, with the latter you'll end up with a different bytecode in your *.class files than in your *.java ones. As I don't mind it as long as IDEs and maven support provides good support, and as there are more chances you already have it in your project, I'll pick Lombok for subsequent examples.
+
+Don't revert to isPresent
+Zip
+Throwing exceptions in the stream
+Try/Either vs try{}
+Fold vs reduce (sum)
+Future with coherent method naming
+Beware of mutable collections (immutables, getters-only Lombok)
+A look into the future (data classes, pattern matching)
+
+Optional in method parameters (why Lists are good, but Options not?)
+Why var, not var
+
+Jeśli decudujesz się na programowanie fuknyjne pozostań przy nim -- unikaj mutowania zmiennych przy map/flatMap -- robisz to po to, żeby móc łatwo prześledzić co się dzieje z kodem i chcesz uniknąć matwienia się, że dane zostaną zmienione gdzieś po drodze
+
+An example with counting the number of elements in a collection (using atomic integer) versus collector
+
+An example with comparing 2 subsequent elements in the collection with zip vs ???
+
+Future having the naming convention coherent with the rest of collections
+
+An example of transferring callback-based approach (cassandra) to Future based approach
+
+Używaj więc niemutowalnych struktur -- te z interfejsami VAVR-owymi mają przewagę nad javowymi nie mając metod set/update, które mogą mogą rzucić wyjątek przy próbie zmiany
+
+Jawnie opakuj rzeczy które mogą się nie powieść w Try/Either, wyjątki typu RuntimeExecption mogą być bolesne do debugowania -- bardzo więc zwracaj uwagę na to czy dany typ jest nullowalny
+
