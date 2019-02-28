@@ -22,8 +22,8 @@ class FailableBehaviourTest {
           TRUE)
       );
 
-  ZonedDateTime now =  ZonedDateTime.of(2020, 1, 1, 1, 0, 0, 0, UTC);
-  Integer avgAge = 40;
+  ZonedDateTime now =  ZonedDateTime.of(2020, 12, 31, 1, 0, 0, 0, UTC);
+  Integer avgAge = 41;
   List<String> existingNames = List.of("Test John 0", "Test John 1");
 
 

@@ -34,15 +34,15 @@ class FailableBehaviour {
   static class AvgPeriodCounter {
     static final AvgPeriodCounter ZERO = new AvgPeriodCounter(Period.ZERO, 0);
     final Period sum;
-    final Integer elements;
+    final Integer elementsNumber;
     AvgPeriodCounter plus(Period period) {
-      return new AvgPeriodCounter(sum.plus(period), elements + 1);
+      return new AvgPeriodCounter(sum.plus(period), elementsNumber + 1);
     }
     AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter) {
-      return new AvgPeriodCounter(sum.plus(avgPeriodCounter.sum), elements + avgPeriodCounter.elements);
+      return new AvgPeriodCounter(sum.plus(avgPeriodCounter.sum), elementsNumber + avgPeriodCounter.elementsNumber);
     }
-    int getAvgYear() {
-      return sum.getYears() / elements;
+    int getAvgYear(ZonedDateTime relativeTo) {
+      return Period.between(relativeTo.minus(sum).toLocalDate(), relativeTo.toLocalDate()).getYears() / elementsNumber;
     }
   }
 
@@ -71,6 +71,6 @@ class FailableBehaviour {
             (AvgPeriodCounter acc, Period p) -> acc.plus(p),
             (AvgPeriodCounter acc1, AvgPeriodCounter acc2) -> acc1.plus(acc2)
         )
-        .getAvgYear();
+        .getAvgYear(now);
   }
 }
