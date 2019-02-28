@@ -2,7 +2,6 @@ package com.kpalka.fpplayground;
 
 import io.vavr.control.Try;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Period;
@@ -18,13 +17,11 @@ class FailableBehaviour {
   static class CustomerService {
     private io.vavr.collection.List<Customer> customersSource;
 
-    @EqualsAndHashCode
     static class ServiceException extends Exception {
       ServiceException(String msg) {
         super(msg);
       }
     }
-
 
     Optional<Customer> getByNameOptionalThrowing(String name) throws ServiceException {
       if ("Error-prone Customer".equals(name)) throw new ServiceException("Life is life... Nananana");
@@ -34,8 +31,6 @@ class FailableBehaviour {
     Try<Optional<Customer>> getByNameWithTry(String name) {
       return Try.of(() -> getByNameOptionalThrowing(name));
     }
-
-
   }
 
   private static Function<ZonedDateTime, Period> periodTo(ZonedDateTime to) {
@@ -47,12 +42,15 @@ class FailableBehaviour {
     static final AvgPeriodCounter ZERO = new AvgPeriodCounter(Period.ZERO, 0);
     final Period sum;
     final Integer elementsNumber;
+
     AvgPeriodCounter plus(Period period) {
       return new AvgPeriodCounter(sum.plus(period), elementsNumber + 1);
     }
+
     AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter) {
       return new AvgPeriodCounter(sum.plus(avgPeriodCounter.sum), elementsNumber + avgPeriodCounter.elementsNumber);
     }
+
     int getAvgYear(ZonedDateTime relativeTo) {
       return Period.between(relativeTo.minus(sum).toLocalDate(), relativeTo.toLocalDate()).getYears() / elementsNumber;
     }
@@ -91,17 +89,21 @@ class FailableBehaviour {
     var toAge = periodTo(now);
 
     return Try.traverse(names, cs::getByNameWithTry) // Try<Seq<Optional<Customer>>>
-      .map(customers -> customers // Seq<Optional<Customer>>
-          // If you're interested how pattern matching can look like see http://blog.vavr.io/integrating-partial-functions-into-javaslang/
-          .filter(Optional::isPresent)
-          .map(Optional::get)
-          .map(Customer::getBornOn)
-          .map(toAge)
-          .foldLeft(AvgPeriodCounter.ZERO, AvgPeriodCounter::plus)
-          .getAvgYear(now)
-      )
+        .map(customers -> customers // Seq<Optional<Customer>>
+            // If you're interested how pattern matching can look like see http://blog.vavr.io/integrating-partial-functions-into-javaslang/
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(Customer::getBornOn)
+            .map(toAge)
+            .foldLeft(AvgPeriodCounter.ZERO, AvgPeriodCounter::plus)
+            .getAvgYear(now)
+        )
         // and in the client of this method you can write something like...
         .onFailure(e -> log.warn("Cannot obtain customers {}", names, e))
-        .onSuccess(result -> {if (log.isDebugEnabled()) {log.debug("For customers {} received the average age {}", names, result);}}) ;
+        .onSuccess(result -> {
+          if (log.isDebugEnabled()) {
+            log.debug("For customers {} received the average age {}", names, result);
+          }
+        });
   }
 }
