@@ -26,13 +26,13 @@ class FailableBehaviour {
     }
   }
 
-  static Function<ZonedDateTime, Period> periodTo(ZonedDateTime to) {
+  private static Function<ZonedDateTime, Period> periodTo(ZonedDateTime to) {
     return from -> Period.between(from.toLocalDate(), to.toLocalDate());
   }
 
   @AllArgsConstructor
   static class AvgPeriodCounter {
-    static AvgPeriodCounter ZERO = new AvgPeriodCounter(Period.ZERO, 0);
+    static final AvgPeriodCounter ZERO = new AvgPeriodCounter(Period.ZERO, 0);
     final Period sum;
     final Integer elements;
     AvgPeriodCounter plus(Period period) {
@@ -41,8 +41,8 @@ class FailableBehaviour {
     AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter) {
       return new AvgPeriodCounter(sum.plus(avgPeriodCounter.sum), elements + avgPeriodCounter.elements);
     }
-    Period getAvg() {
-      return Period.ofDays(sum.getDays() / elements);
+    int getAvgYear() {
+      return sum.getYears() / elements;
     }
   }
 
@@ -58,10 +58,11 @@ class FailableBehaviour {
     };
 
     var toAge = periodTo(now);
+
     // I often see similar examples used to show the possibilities of Stream<T> and method references...
     return names
         .stream()
-        .map(aHackYouCanSometimesSpot) // ... and when I see such a call to service as a fragment of stream pipeline I wanna cry. Things can fail. In a nasty way. And I think such situations make some people, softly said, not very willing to incorporate the newer features of the language to their daily usage
+        .map(aHackYouCanSometimesSpot) // ... and when I see such a call to service as a fragment of stream pipeline I smell something bad. Things can fail. In a nasty way. And I think such situations make some people, softly said, not very willing to incorporate the newer features of the language to their daily usage
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(Customer::getBornOn)
@@ -70,9 +71,6 @@ class FailableBehaviour {
             (AvgPeriodCounter acc, Period p) -> acc.plus(p),
             (AvgPeriodCounter acc1, AvgPeriodCounter acc2) -> acc1.plus(acc2)
         )
-        .getAvg()
-        .getYears();
-
+        .getAvgYear();
   }
-
 }
