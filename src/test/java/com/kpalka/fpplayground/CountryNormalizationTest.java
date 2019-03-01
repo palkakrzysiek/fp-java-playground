@@ -54,11 +54,20 @@ class CountryNormalizationTest {
 
   @Test
   void deactivateConsumersTest() {
-    deactivateCustomers(getTestConsumers()).forEach(customer ->
+    var originalList = getTestConsumers();
+
+    var result = deactivateCustomers(originalList);
+
+    result.forEach(customer ->
         assertThat(customer.getActive())
             .describedAs("Customer [" + customer + "] should not be active")
             .isEqualTo(FALSE)
     );
+
+    assertThat(originalList)
+        .describedAs("Customer objects in the original list are not modified")
+        .containsExactly(getTestConsumers().toArray(new Customer[0]));
+
   }
 
   Set<String> ALlOWED_COUNTRY_NAMES = Set.of("USA", "France", "India", "Poland");
