@@ -67,7 +67,6 @@ class CountryNormalizationTest {
     assertThat(originalList)
         .describedAs("Customer objects in the original list are not modified")
         .containsExactly(getTestConsumers().toArray(new Customer[0]));
-
   }
 
   Set<String> ALlOWED_COUNTRY_NAMES = Set.of("USA", "France", "India", "Poland");

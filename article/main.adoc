@@ -11,6 +11,8 @@ It's not an easy task to operate on data classes without a lot of boilerpate. Ge
 
 === How to live without setters
 
+Here's an example of an immutable class that isn't bloated with unnecessary information (all-args constructor, builder, equals+hashCode, getters).
+
 [source,java]
 ----
 import lombok.Builder;
@@ -41,6 +43,163 @@ class Customer {
   private ZonedDateTime bornOn;
   private Boolean active;
 }
+----
+
+Here, the `@Value` annotation creates all the necessary methods (not including setters) to be used in immutable class. To use it in IntelliJ you must turn on annotation processors in settings.
+
+So far so good, the problem appears when one wants to change a single filed in an object. Normally it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
+
+To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true` (unfortunately it's not a default value). This allows to summon the builder with pre-filled fields from an existing object.
+
+As an simple example let's use the builder to solve a task of deactivating all users in a list.
+
+[source,java]
+----
+  static List<Customer> deactivateCustomers(List<Customer> customers) {
+    return customers
+        .stream()
+        .map(customer -> customer
+            .toBuilder()
+            .active(FALSE)
+            .build())
+        .collect(Collectors.toList());
+  }
+----
+
+Given a such test data provider
+
+[source,java]
+----
+
+  List<Customer> getTestConsumers() {
+    return List.of(
+        Customer
+            .builder()
+            .name("John Kovalsky")
+            .address(Customer.Addrees
+                .builder()
+                .line1(of("Warszawska 1"))
+                .line2(empty())
+                .zipCode(of("00-000"))
+                .city(of("Warsaw"))
+                .country(of("Poland"))
+                .build())
+            .active(TRUE)
+            .bornOn(ZonedDateTime.of(2014, 3, 18, 12, 0, 0, 0, UTC))
+            .build(),
+        Customer
+            .builder()
+            .name("Jan Kowalski")
+            .address(Customer.Addrees
+                .builder()
+                .line1(of("Warszawska 2"))
+                .line2(empty())
+                .zipCode(of("00-001"))
+                .city(of("Warszawa"))
+                .country(of("Polska"))
+                .build())
+            .active(FALSE)
+            .bornOn(ZonedDateTime.of(2019, 3, 18, 12, 0, 0, 0, UTC))
+            .build()
+    );
+  }
+----
+
+
+[source,java]
+----
+  @Test
+  void deactivateConsumersTest() {
+    var originalList = getTestConsumers();
+
+    var result = deactivateCustomers(originalList);
+
+    result.forEach(customer ->
+        assertThat(customer.getActive())
+            .describedAs("Customer [" + customer + "] should not be active")
+            .isEqualTo(FALSE)
+    );
+
+    assertThat(originalList)
+        .describedAs("Customer objects in the original list are not modified")
+        .containsExactly(getTestConsumers().toArray(new Customer[0]));
+  }
+----
+
+Now, more complicated example. Given that we must normalize all the country values from local to English names in a collection of `Customer`s.
+
+
+[source,java]
+----
+
+  // the best we can get in a language without type aliases
+  @FunctionalInterface
+  private interface CustomerMapper extends Function<Customer, Customer> {
+  }
+
+  private static CustomerMapper countryRenamer(String oldValue, String newValue) {
+    return customer -> {
+      var oldAddress = customer.getAddress();
+      return customer
+          .toBuilder()
+          .address(oldAddress
+              .toBuilder()
+              .country(oldAddress
+                  .getCountry()
+                  // don't revert to isPresent which makes the code looks not better than if (x != null) {...}
+                  // remember that Optional<A> has convenient .map(A -> B) and .flatMap(A -> Optional<B>) methods
+                  .map(countryName -> countryName.replace(oldValue, newValue)))
+              .build())
+          .build();
+    };
+  }
+----
+
+No need of rewriting each field, but still some nested code is probably the most we can get if we stick to Java. To see how replacing a single element is a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
+
+For completeness here's the usage usage (and one country name for simplicity)
+
+[source,java]
+----
+  static List<Customer> normalizeCountry(List<Customer> customers) {
+    var oldVal = "Polska";
+    var newVal = "Poland";
+    var result = customers
+        .stream()
+        // as customer is immutable we dont have to worry about changes to the original values in the countryRenamer, whatever its implementation is...
+        .map(countryRenamer(oldVal, newVal))
+        .collect(Collectors.toList());
+    // ... and can compare the original list to the new list
+    if (log.isDebugEnabled()) log.debug("Normalized countries from {} resulting in {}", customers, result);
+    return result;
+  }
+----
+
+[source,java]
+----
+  Set<String> ALlOWED_COUNTRY_NAMES = Set.of("USA", "France", "India", "Poland");
+
+  @Test
+  void countryNamesAfterNormalizationContainOnlyAllowedValues() {
+    normalizeCountry(getTestConsumers()) .forEach(customer ->
+        customer.getAddress().getCountry().ifPresent(countryName ->
+            assertThat(countryName)
+            .describedAs("The country name of [" + customer + "] after the normalization, if present should be within allowed value set ["+ ALlOWED_COUNTRY_NAMES + "]")
+            .isIn(ALlOWED_COUNTRY_NAMES)
+            )
+        );
+  }
+
+----
+
+We can compare the original and new values in the log statement, as the objects from the original list couldn't be modified in the `.map(...)` stream pipeline element.
+
+[source,java]
+----
+----
+
+[source,java]
+----
 ----
 
 ==== Side note about Optional<T> as a field
