@@ -63,7 +63,7 @@ class ZippingTest {
 
   @Test
   void customerListDiffWithAtomicReference() {
-    assertThat(Zipping.compareSubsequentChangesWithAtomicRefence(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping.compareSubsequentChangesWithAtomicReference(customers)).isEqualTo(expectedChangesDescriptions);
   }
 
   @Test
@@ -73,7 +73,7 @@ class ZippingTest {
 
   @Test
   void customerListDiffWithVavrTest() {
-    assertThat(Zipping.compareSubsequentChangesWithAtomicRefence(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping.compareSubsequentChangesWithAtomicReference(customers)).isEqualTo(expectedChangesDescriptions);
   }
 
   @Test

@@ -41,7 +41,7 @@ class Zipping {
         .collect(Collectors.joining(" | "));
   }
 
-  static List<String> compareSubsequentChangesWithAtomicRefence(List<Customer> customerStateSnapshots) {
+  static List<String> compareSubsequentChangesWithAtomicReference(List<Customer> customerStateSnapshots) {
     if (customerStateSnapshots.size() < 2) return Collections.emptyList();
     final var lastValue = new AtomicReference<>(customerStateSnapshots.get(0)); // ugh!
     // If one must mutate some state, than using good old for loops and variable doesn't look as awful as this

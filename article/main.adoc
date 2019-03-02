@@ -198,16 +198,6 @@ For completeness here's the usage usage (and one country name for simplicity)
 
 We can compare the original and new values in the log statement, as the objects from the original list couldn't be modified in the `.map(...)` stream pipeline element.
 
-[source,java]
-----
-// fillme
-----
-
-[source,java]
-----
-// fillme
-----
-
 ==== Side note: `Optional<T>` as a field
 When you try to use `Optional<T>` as a field in IntelliJ you'll be greeted with a warning
 
@@ -286,8 +276,42 @@ And the use it
   }
 ----
 
-The `lastValue` constant indicates a strong desire to use Streams but and problem of enforcing that used variables must be declared as final. `AtomicReference<Customer>` is a quick hack for changing for each loop to the _New Fancy Functional Streams™_. It's a nasty hack, of course. All the promises of simplicity about reasoning about code is thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's valid claim. But in this case it'd be easier to just use a variable and old loops.
+The `lastValue` constant indicates a strong desire to use Streams but and problem of enforcing that used variables must be declared as final. `AtomicReference<Customer>` is a quick hack for changing for each loop to the _New Fancy Functional Streams™_.
 
+It's a nasty hack, of course. All the promises of simplicity about reasoning about code is thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's valid claim. But in this case it'd be easier to just use a variable and old loops.
+
+==== Zipping it
+
+An easy way to compare two subsequent elements is to combine two streams -- the original one and one with the first element skipped. Unfortunately `java.util.Stream` lacks such a method. Insufficiencies of Java's standard libraries make it a high time to start using the http://www.vavr.io/[vavr] library.
+
+I'll be addressing vavr classes with fully qualified package names (`io.vavr.*`) to avoid confusion which class in the code example belongs to standard Java, and which not. Normally you can import vavr counterparts of java classes to make the code more succinct.
+
+Here's how once can achieve the goal with vavr's `List`
+
+
+[source,java]
+----
+  static List<String> compareSubsequentChanges(List<Customer> customerStateSnapshots) {
+    if (customerStateSnapshots.size() < 2) return Collections.emptyList();
+    final var vavrList = io.vavr.collection.List.ofAll(customerStateSnapshots);
+    return vavrList
+        .zipWith(vavrList.drop(1), Zipping::customerDiff)
+        .asJava();
+  }
+----
+
+First, Java's List is changed to vavr's one. Than in the https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[zipWith] the original collection is combined with the one without the first element using `Zipping::customerDiff` as a method taking two elements, one from each collection, and returning the result. It's worth to check other https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[methods provided by vavr collections] which can be missing in Java's `Stream`.
+
+Note that creating a lazy `Stream` and than `.collect` ing the result is not obligatory in vavr's collections. This allows to clean up the code logic. If one switches to vavr completely, `.asJava()` becomes unnecessary as well.
+
+
+
+[source,java]
+----
+// fillme
+----
+
+=== Test data
 [source,java]
 ----
   private Addrees address = Addrees
