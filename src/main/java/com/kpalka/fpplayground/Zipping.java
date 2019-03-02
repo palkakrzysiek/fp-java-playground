@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 
 class Zipping {
 
-  private Zipping() {}
+  private Zipping() {
+  }
 
   @Value
   private static class ComparableAttribute {
@@ -31,7 +32,6 @@ class Zipping {
     else return Optional.of(valueName + ": " + v1 + " -> " + v2);
   }
 
-
   static String customerDiff(Customer c1, Customer c2) {
     return COMPARABLE_ATTRIBUTES
         .stream()
@@ -41,7 +41,7 @@ class Zipping {
         .collect(Collectors.joining(" | "));
   }
 
-  static List<String> compareSubsequentChangesStdLibsOnlyThroughAbomination(List<Customer> customerStateSnapshots) {
+  static List<String> compareSubsequentChangesWithAtomicRefence(List<Customer> customerStateSnapshots) {
     if (customerStateSnapshots.size() < 2) return Collections.emptyList();
     final var lastValue = new AtomicReference<>(customerStateSnapshots.get(0)); // ugh!
     // If one must mutate some state, than using good old for loops and variable doesn't look as awful as this
@@ -51,7 +51,6 @@ class Zipping {
         .map(customer -> customerDiff(lastValue.getAndSet(customer), customer))
         .collect(Collectors.toList());
   }
-
 
   static List<String> compareSubsequentChanges(List<Customer> customerStateSnapshots) {
     if (customerStateSnapshots.size() < 2) return Collections.emptyList();

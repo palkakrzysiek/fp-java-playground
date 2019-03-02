@@ -55,11 +55,16 @@ class ZippingTest {
   }
 
   private List<Customer> customers = List.of(c1, c2, c3);
+
   private List<String> expectedChangesDescriptions = List.of(
       "name: Johny Kovalsky -> John Kovalsky",
       "name: John Kovalsky -> Jan Kowalski | born on: 2014-03-18T12:00Z -> 2019-03-18T12:00Z | is active: true -> false"
   );
 
+  @Test
+  void customerListDiffWithAtomicReference() {
+    assertThat(Zipping.compareSubsequentChangesWithAtomicRefence(customers)).isEqualTo(expectedChangesDescriptions);
+  }
 
   @Test
   void customerListDiffWithJavaStdLibTest() {
@@ -68,7 +73,7 @@ class ZippingTest {
 
   @Test
   void customerListDiffWithVavrTest() {
-    assertThat(Zipping.compareSubsequentChangesStdLibsOnlyThroughAbomination(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping.compareSubsequentChangesWithAtomicRefence(customers)).isEqualTo(expectedChangesDescriptions);
   }
 
   @Test

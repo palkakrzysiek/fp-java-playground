@@ -246,38 +246,47 @@ Now let's try to define actual builder of a `String` with changes summary
 
 [source,java]
 ----
-  private static Option<String> valueDiff(String valueName, String v1, String v2) {
-    if (v1.equals(v2)) return none();
-    else return some(valueName + ": " + v1 + " -> " + v2 + " | ");
+  private static Optional<String> valueDiff(String valueName, String v1, String v2) {
+    if (v1.equals(v2)) return Optional.empty();
+    else return Optional.of(valueName + ": " + v1 + " -> " + v2);
   }
 
   static String customerDiff(Customer c1, Customer c2) {
     return COMPARABLE_ATTRIBUTES
         .stream()
-        .reduce("",
-            (String acc, ComparableAttribute ca) -> acc + valueDiff(
-                ca.name,
-                ca.getter.apply(c1),
-                ca.getter.apply(c2)
-            ).getOrElse(""),
-            (String s1, String s2) -> s1 + " | " + s2 // makes sense for parallel processing, but here looks like too much overhead
-        );
+        .map(attr -> valueDiff(attr.name, attr.getGetter().apply(c1), attr.getter.apply(c2)))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.joining(" | "));
   }
 ----
 
+(test data placed at the end of this section)
 
 [source,java]
 ----
   @Test
   void customerDiffTest() {
-    assertThat(Zipping.customerDiff(c1, c3)).isEqualTo("name: Johny Kovalsky -> Jan Kowalski | born on: 2014-03-18T12:00Z -> 2019-03-18T12:00Z | is active: true -> false | ");
+    assertThat(Zipping.customerDiff(c1, c3)).isEqualTo("name: Johny Kovalsky -> Jan Kowalski | born on: 2014-03-18T12:00Z -> 2019-03-18T12:00Z | is active: true -> false");
   }
 ----
 
-The `customerDiff` method
+And the use it
 
+[source,java]
+----
+  static List<String> compareSubsequentChangesWithAtomicRefence(List<Customer> customerStateSnapshots) {
+    if (customerStateSnapshots.size() < 2) return Collections.emptyList();
+    final var lastValue = new AtomicReference<>(customerStateSnapshots.get(0));
+    return customerStateSnapshots
+        .stream()
+        .skip(1)
+        .map(customer -> customerDiff(lastValue.getAndSet(customer), customer))
+        .collect(Collectors.toList());
+  }
+----
 
-(test data used in this section)
+The `lastValue` constant indicates a strong desire to use Streams but and problem of enforcing that used variables must be declared as final. `AtomicReference<Customer>` is a quick hack for changing for each loop to the _New Fancy Functional Streams™_. It's a nasty hack, of course. All the promises of simplicity about reasoning about code is thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's valid claim. But in this case it'd be easier to just use a variable and old loops.
 
 [source,java]
 ----
