@@ -1,16 +1,13 @@
 package com.kpalka.fpplayground;
 
-import io.vavr.control.Option;
 import lombok.Value;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static io.vavr.control.Option.none;
-import static io.vavr.control.Option.some;
 
 class Zipping {
 
@@ -29,32 +26,19 @@ class Zipping {
       new ComparableAttribute("is active", c -> c.getActive().toString())
   );
 
-  private static Option<String> valueDiff(String valueName, String v1, String v2) {
-    if (v1.equals(v2)) return none();
-    else return some(valueName + ": " + v1 + " -> " + v2 + " | ");
+  private static Optional<String> valueDiff(String valueName, String v1, String v2) {
+    if (v1.equals(v2)) return Optional.empty();
+    else return Optional.of(valueName + ": " + v1 + " -> " + v2);
   }
+
 
   static String customerDiff(Customer c1, Customer c2) {
     return COMPARABLE_ATTRIBUTES
         .stream()
-        .reduce("",
-            (String acc, ComparableAttribute ca) -> acc + valueDiff(
-                ca.name,
-                ca.getter.apply(c1),
-                ca.getter.apply(c2)
-            ).getOrElse(""),
-            (String s1, String s2) -> s1 + " | " + s2 // makes sense for parallel processing, but here looks like too much overhead
-        );
-  }
-
-  static String customerDiffWithVavr(Customer c1, Customer c2) {
-    return io.vavr.collection.List.ofAll(COMPARABLE_ATTRIBUTES)
-        .foldLeft("",
-            (String acc, ComparableAttribute ca) -> acc + valueDiff(
-                ca.name,
-                ca.getter.apply(c1),
-                ca.getter.apply(c2)
-            ).getOrElse(""));
+        .map(attr -> valueDiff(attr.name, attr.getGetter().apply(c1), attr.getter.apply(c2)))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.joining(" | "));
   }
 
   static List<String> compareSubsequentChangesStdLibsOnlyThroughAbomination(List<Customer> customerStateSnapshots) {
@@ -73,7 +57,7 @@ class Zipping {
     if (customerStateSnapshots.size() < 2) return Collections.emptyList();
     final var vavrList = io.vavr.collection.List.ofAll(customerStateSnapshots);
     return vavrList
-        .zipWith(vavrList.drop(1), Zipping::customerDiffWithVavr)
+        .zipWith(vavrList.drop(1), Zipping::customerDiff)
         .asJava();
   }
 
@@ -92,7 +76,7 @@ class Zipping {
         // foldLeft requires the zero element because it's the default one if the list is empty. a data type like NonEmptyList could have a foldLeft implementation which doesn't require the zero value as there will be always at least one element. Unfortunately the proposal to add it (https://github.com/vavr-io/vavr/issues/1244) might have been not too-well motivated and has been rejected
         .foldLeft(zero, (ComparisionState foldAcc, Customer c) ->
             // Such upgrading of accumulator wouldn't be possible had used a List<A> from the Java standard library. Its `add(A elem)` method doesn't return a new list object with the new element, but just a Boolean signaling if the collection has been mutated
-            new ComparisionState(c, foldAcc.stateAcc.append(customerDiffWithVavr(foldAcc.lastVale, c))))
+            new ComparisionState(c, foldAcc.stateAcc.append(customerDiff(foldAcc.lastVale, c))))
         .stateAcc
         .asJava();
   }

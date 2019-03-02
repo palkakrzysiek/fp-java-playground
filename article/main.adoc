@@ -8,6 +8,8 @@ Thus Java constantly gains more features supporting writing code in functional s
 Yet it looks like the language architects are not convinced if fully support that trend by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can convey information about a failure like `Try<T>` or `Either<E, T>` which limits the possibility of writing more complicated logic without nasty mixture of good ol' `try {}` s and mutable elements.
 Here we'll explore a couple of libraries that make it easier to stay with the FP side.
 
+_All code examples are provided in https://github.com/palkakrzysiek/fp-java-playground[this github repository]._
+
 == The basics – data classes
 It's not an easy task to operate on data classes without a lot of boilerpate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok]. The former generates the code with concrete implementations form abstract classes, with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. As I don't mind it as long as IDEs and maven support provides good support, and as there are more chances you already have it in your project, I'll pick Lombok for subsequent examples.
 
@@ -220,7 +222,105 @@ Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of th
 // TODO
 
 == What about the processed `Stream` elements?
-In situation
+A temptation to use mutable state in a `Stream<T>` comes when we need to access a previous element that has already been processed. Say we need to summarize changes in `Customer` objects for auditing purposes. First come up with a  machinery for producing a string with differences between 2 objects.
+
+Here defined is a map of attribute names to their projectors on a customer object
+
+[source,java]
+----
+  @Value
+  private static class ComparableAttribute {
+    private String name;
+    private Function<Customer, String> getter;
+  }
+
+  private static final List<ComparableAttribute> COMPARABLE_ATTRIBUTES = List.of(
+      new ComparableAttribute("name", Customer::getName),
+      new ComparableAttribute("address", c -> c.getAddress().toString()),
+      new ComparableAttribute("born on", c -> c.getBornOn().toString()),
+      new ComparableAttribute("is active", c -> c.getActive().toString())
+  );
+----
+
+Now let's try to define actual builder of a `String` with changes summary
+
+[source,java]
+----
+  private static Option<String> valueDiff(String valueName, String v1, String v2) {
+    if (v1.equals(v2)) return none();
+    else return some(valueName + ": " + v1 + " -> " + v2 + " | ");
+  }
+
+  static String customerDiff(Customer c1, Customer c2) {
+    return COMPARABLE_ATTRIBUTES
+        .stream()
+        .reduce("",
+            (String acc, ComparableAttribute ca) -> acc + valueDiff(
+                ca.name,
+                ca.getter.apply(c1),
+                ca.getter.apply(c2)
+            ).getOrElse(""),
+            (String s1, String s2) -> s1 + " | " + s2 // makes sense for parallel processing, but here looks like too much overhead
+        );
+  }
+----
+
+
+[source,java]
+----
+  @Test
+  void customerDiffTest() {
+    assertThat(Zipping.customerDiff(c1, c3)).isEqualTo("name: Johny Kovalsky -> Jan Kowalski | born on: 2014-03-18T12:00Z -> 2019-03-18T12:00Z | is active: true -> false | ");
+  }
+----
+
+The `customerDiff` method
+
+
+(test data used in this section)
+
+[source,java]
+----
+  private Addrees address = Addrees
+                .builder()
+                .line1(of("Warszawska 1"))
+                .line2(empty())
+                .zipCode(of("00-000"))
+                .city(of("Warsaw"))
+                .country(of("Poland"))
+                .build();
+
+  private Customer c1 = Customer
+            .builder()
+            .name("Johny Kovalsky")
+            .address(address)
+            .active(TRUE)
+            .bornOn(ZonedDateTime.of(2014, 3, 18, 12, 0, 0, 0, UTC))
+            .build();
+
+  private Customer c2 = Customer
+      .builder()
+      .name("John Kovalsky")
+      .address(address)
+      .active(TRUE)
+      .bornOn(ZonedDateTime.of(2014, 3, 18, 12, 0, 0, 0, UTC))
+      .build();
+
+  private Customer c3 = Customer
+            .builder()
+            .name("Jan Kowalski")
+            .address(address)
+            .active(FALSE)
+            .bornOn(ZonedDateTime.of(2019, 3, 18, 12, 0, 0, 0, UTC))
+            .build();
+
+----
+
+
+[source,java]
+----
+// TODO fillme
+----
 
 
 
