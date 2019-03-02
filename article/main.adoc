@@ -1,10 +1,12 @@
 = Dealing with Java quircks while switching to FP style
 
-Functional programming promises easy testing reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling program definition with interpretation.
+_originally posted on the Idemia Digital Lab Poland https://www.facebook.com/idemiadigitallabpoland/[Facebook page]_
+
+Functional programming promises easy testing and reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling program definition with interpretation.
 
 Thus Java constantly gains more features supporting writing code in functional style, starting with 2014's addition of lambdas and streams of collection elements.
-Yet it looks like the language architects are not convinced if fully support that trend by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can convey information about a failure like `Try<T>` or `Either<E, T>` which limits the possibility of writing more complicated logic without nasty mixture of good old `try {}` s and mutable elements.
-Here we'll explore a couple of libraries that make it easier to stay with FP side.
+Yet it looks like the language architects are not convinced if fully support that trend by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can convey information about a failure like `Try<T>` or `Either<E, T>` which limits the possibility of writing more complicated logic without nasty mixture of good ol' `try {}` s and mutable elements.
+Here we'll explore a couple of libraries that make it easier to stay with the FP side.
 
 == The basics – data classes
 It's not an easy task to operate on data classes without a lot of boilerpate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok]. The former generates the code with concrete implementations form abstract classes, with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. As I don't mind it as long as IDEs and maven support provides good support, and as there are more chances you already have it in your project, I'll pick Lombok for subsequent examples.
@@ -155,7 +157,7 @@ Now, more complicated example. Given that we must normalize all the country valu
   }
 ----
 
-No need of rewriting each field, but still some nested code is probably the most we can get if we stick to Java. To see how replacing a single element is a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
+No need of rewriting each field, but still some nested code, is probably the most we can get if we stick to Java. To see how replacing a single element is a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
 
 For completeness here's the usage usage (and one country name for simplicity)
 
@@ -196,22 +198,29 @@ We can compare the original and new values in the log statement, as the objects 
 
 [source,java]
 ----
+// fillme
 ----
 
 [source,java]
 ----
+// fillme
 ----
 
-==== Side note about Optional<T> as a field
+==== Side note: `Optional<T>` as a field
 When you try to use `Optional<T>` as a field in IntelliJ you'll be greeted with a warning
 
 ____
 Inspection info: Reports any uses of java.util.Optional<T>, java.util.OptionalDouble, java.util.OptionalInt, java.util.OptionalLong or com.google.common.base.Optional as the type for a field or a parameter. Optional was designed to provide a limited mechanism for library method return types where there needed to be a clear way to represent "no result". Using a field with type java.util.Optional is also problematic if the class needs to be Serializable, which java.util.Optional is not.
 ____
 
-Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. In case of Lombok you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
+Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. With Lombok you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
 
+==== Side note: developing intuition about the type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
 
+// TODO
+
+== What about the processed `Stream` elements?
+In situation
 
 
 
