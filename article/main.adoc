@@ -455,8 +455,6 @@ ____
       }
     };
 
-    var toAge = periodTo(now);
-
     // I often see similar examples used to show the possibilities of Stream<T> and method references...
     return names
         .stream()
@@ -465,14 +463,184 @@ ____
   }
 ----
 
-Now by calling getAvgAge we aren't even informed that something can go wrong, so it's easy to forget to handle an error. The argument of easier reasoning about a program written in the functional style apparently doesn't work here.
+Now by calling getAvgAge we aren't even informed that something can go wrong, so it's easy to forget to handle an error. The argument of easier reasoning about a program written in the functional style apparently doesn't apply here.
+
+For a moment let's try to finish the broken implementation and then fix error handling part.
+
+We're gonna need a class representing state that will be used in the reducing a stream of customers' age to the average value
 
 [source,java]
 ----
-// fillme
+  @AllArgsConstructor
+  static class AvgPeriodCounter {
+    static final AvgPeriodCounter ZERO = new AvgPeriodCounter(Period.ZERO, 0);
+    final Period sum;
+    final Integer elementsNumber;
+
+    AvgPeriodCounter plus(Period period) {
+      return new AvgPeriodCounter(sum.plus(period), elementsNumber + 1);
+    }
+
+    AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter) {
+      return new AvgPeriodCounter(sum.plus(avgPeriodCounter.sum), elementsNumber + avgPeriodCounter.elementsNumber);
+    }
+
+    int getAvgYear(ZonedDateTime relativeTo) {
+      return Period.between(relativeTo.minus(sum).toLocalDate(), relativeTo.toLocalDate()).getYears() / elementsNumber;
+    }
+  }
+----
+
+And again, this time the complete implementation
+
+[source,java]
+----
+  static Integer getAvgAge(CustomerService cs, List<String> names, ZonedDateTime now) {
+    Function<String, Optional<Customer>> aHackYouCanSometimesSpot = name -> {
+      try {
+        return cs.getByNameOptionalThrowing(name);
+      } catch (CustomerService.ServiceException e) {
+        throw new RuntimeException(e);
+      }
+    };
+
+    var toAge = periodTo(now);
+
+    return names
+        .stream()
+        .map(aHackYouCanSometimesSpot)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(Customer::getBornOn)
+        .map(toAge)
+        .reduce(AvgPeriodCounter.ZERO,
+            (AvgPeriodCounter acc, Period p) -> acc.plus(p),
+            (AvgPeriodCounter acc1, AvgPeriodCounter acc2) -> acc1.plus(acc2)
+        )
+        .getAvgYear(now);
+  }
+----
+
+_(test data at the end of the section)_
+[source,java]
+----
+  @Test
+  void countAvgForExistingCustomers() {
+    assertThat(FailableBehaviour.getAvgAge(cs, existingNames, now))
+        .describedAs("Counts the avg of existing customers' age")
+        .isEqualTo(avgAge);
+  }
+
+  @Test
+  void countAvgThrowing() {
+    assertThatThrownBy(() -> FailableBehaviour.getAvgAge(cs, List.of(errorProneCustomer), now))
+        .describedAs("Method can throw an expected error, but doesn't inform that it can fail in any way. Additionally, meaningful ServiceException is wrapped very generic RuntimeException")
+        .isExactlyInstanceOf(RuntimeException.class);
+  }
+----
+
+It's worth noticing the (over)complicated reduce (available in Java's Stream). Compared to the `foldLeft` available in vavr, in `reduce` we have two stages. The first is the same as in `foldLeft`, the second combines the states produced by the first stage.
+
+In the first, the new accumulated state is dependent on the previous previous value of the stream. In the second states can be combined in independently, which means they can be paralleled. It's great if you need it. If you don't you have to deal with the burden of defining additional binary operation, here `AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter)` next to `AvgPeriodCounter plus(Period period)`. So if we already have the whole list in memory, using `foldX` seams to be a sexier solution than `reduce`.
+
+Now its time to tame the method calls that can fail. vavr offers Try<T> and Either<E, T> classes with which you can inform about possible failre in the return type. Either is more powerful as you can put in `Left` (failure) part anything signaling the error. `Try` can be seen as
+
+[source,java]
+----
+    interface Try<T> extends Either<Throwable, T> {}
+----
+
+So the errors can be only a (sub)instance of `Throwable`. Say it's good enough for now. Let's add to the `CustomerService`
+
+[source,java]
+----
+    Try<Optional<Customer>> getByNameWithTry(String name) {
+      return Try.of(() -> getByNameOptionalThrowing(name));
+----
+
+Notice that there's no `throws ServiceException` in the method signature, which means it can be used within `Stream`. Notice also the construct of lazy calling another method `() -> methodThatThrows()`. Without it the exception would be thrown immediately, before vavr had a chance to wrap call execution into `Try.Success` or `Try.Failure`.
+
+Now we're ready to use the new method of the service.
+
+
+[source,java]
+----
+  static Try<Integer> getAvgAgeWithTry(CustomerService cs, List<String> names, ZonedDateTime now) {
+
+    var toAge = periodTo(now);
+
+    return Try.traverse(names, cs::getByNameWithTry) // Try<Seq<Optional<Customer>>>
+        .map(customers -> customers // Seq<Optional<Customer>>
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(Customer::getBornOn)
+            .map(toAge)
+            .foldLeft(AvgPeriodCounter.ZERO, AvgPeriodCounter::plus)
+            .getAvgYear(now)
+        );
+  }
+----
+
+in the client code of this method you can add on the result
+
+[source,java]
+----
+    result
+        .onFailure(e -> log.warn("Cannot obtain customers {}", names, e))
+        .onSuccess(result -> {
+          if (log.isDebugEnabled()) {
+            log.debug("For customers {} received the average age {}", names, result);
+          }
+        });
+----
+
+[source,java]
+----
+  @Test
+  void countAvgForExistingCustomersWithTry() {
+    assertThat(FailableBehaviour.getAvgAgeWithTry(cs, existingNames, now))
+        .describedAs("Counts the avg of existing customers' age")
+        .isEqualTo(Try.success(41));
+  }
+
+  @Test
+  void countAvgForExistingCustomersWithTryWhenThereIsAServiceException() {
+    var withErrorProneCustomer = io.vavr.collection.List.ofAll(existingNames).append(errorProneCustomer).asJava();
+    assertThat(FailableBehaviour.getAvgAgeWithTry(cs, withErrorProneCustomer, now).getCause())
+        .describedAs("Try.Failure has the cause of ServiceException")
+        .isExactlyInstanceOf(FailableBehaviour.CustomerService.ServiceException.class);
+  }
+----
+
+The first thing here is to use `Try.traverse` instead of mapping each name in the list like `name -> cs::getByNameWithTry`
+
+[source,java]
+----
 ----
 
 
+Test data used in this section
+[source,java]
+----
+  io.vavr.collection.List<Customer> testCustomers = io.vavr.collection.List.of(
+      ZonedDateTime.of(1970, 1, 1, 1, 0, 0, 0, UTC),
+      ZonedDateTime.of(1990, 1, 1, 1, 0, 0, 0, UTC))
+      .zipWithIndex()
+      .map(bornOnIdx -> new Customer("Test John " + bornOnIdx._2,
+          new Customer.Addrees(empty(), empty(), empty(), empty(), empty()),
+          bornOnIdx._1,
+          TRUE)
+      );
+
+  ZonedDateTime now = ZonedDateTime.of(2020, 12, 31, 1, 0, 0, 0, UTC);
+  Integer avgAge = 41;
+  List<String> existingNames = List.of("Test John 0", "Test John 1");
+  List<String> existingAndNonexistingNames = List.of("Test John 0", "Non-existing John");
+
+  String errorProneCustomer = "Error-prone Customer";
+
+  FailableBehaviour.CustomerService cs = new FailableBehaviour.CustomerService(testCustomers);
+----
 
 Don't revert to isPresent
 Zip
@@ -500,3 +668,4 @@ Używaj więc niemutowalnych struktur -- te z interfejsami VAVR-owymi mają prze
 
 Jawnie opakuj rzeczy które mogą się nie powieść w Try/Either, wyjątki typu RuntimeExecption mogą być bolesne do debugowania -- bardzo więc zwracaj uwagę na to czy dany typ jest nullowalny
 
+how the patter matching could look like http://blog.vavr.io/integrating-partial-functions-into-javaslang

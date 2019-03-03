@@ -55,7 +55,7 @@ class FailableBehaviourTest {
   }
 
   @Test
-  void countAvgForExistingCustomersWithTryWhenTheresASeriveException() {
+  void countAvgForExistingCustomersWithTryWhenThereIsAServiceException() {
     var withErrorProneCustomer = io.vavr.collection.List.ofAll(existingNames).append(errorProneCustomer).asJava();
     assertThat(FailableBehaviour.getAvgAgeWithTry(cs, withErrorProneCustomer, now).getCause())
         .describedAs("Try.Failure has the cause of ServiceException")
