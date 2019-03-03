@@ -266,6 +266,7 @@ Because we can use a function that can produce a `Vehicle` or something more con
 In other words a function B is a subtype if a function A if the function B returns a subtype of the function A and takes a supertype of the function A.
 And in another words functions are covariant in their return types and contravariant in their input types.
 
+In practice if you see `? super` next to the type you can assume it's some kind of an input and if you see `? extends` you can assume it's come kind of an output.
 
 == What about the processed `Stream` elements?
 A temptation to use mutable state in a `Stream<T>` comes when we need to access a previous element that has already been processed. Say we need to summarize changes in `Customer` objects for auditing purposes. First come up with a  machinery for producing a string with differences between 2 objects.
