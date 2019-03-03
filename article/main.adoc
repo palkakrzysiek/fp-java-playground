@@ -311,9 +311,9 @@ Let's now use more universal mechanism when we want to access any state that in 
 [source,java]
 ----
   @Value
-  private static class ComparisionState {
-    private Customer lastVale;
-    private io.vavr.collection.List<String> stateAcc;
+  private static final class ComparisionState {
+    final Customer lastVale;
+    final io.vavr.collection.List<String> stateAcc;
   }
 
   static List<String> compareSubsequentChangesWithFoldLeft(List<Customer> customerStateSnapshots) {
@@ -355,13 +355,9 @@ The default element is sometimes called _zero_, sometimes _unit_. To see why thi
         .isEqualTo(24);
 ----
 
-I'll stick with _zero_ name, as this is what the element is called in vavr. We know that there allways be zero
+I'll stick with _zero_ name, as this is what the element is called in vavr. We know that there always be zero element due to the guard code `if (customerStateSnapshots.size() < 2) return Collections.emptyList();`. It could be simplified if there were a type like `NonEmptyList` with `foldLeft` not requiring the zero element. Such addition was proposed on the https://github.com/vavr-io/vavr/issues/1244[vavr's issue tracker], but apparently wasn't sufficiently motivated and was rejected.
 
-
-[source,java]
-----
-// fillme
-----
+After reducing the list to just the state object, we access its `.stateAcc` field which is a vavr `List` and convert it to Java counterpart with `.asJava()`. Notice that `.stateAcc` is not accessed via a getter, but directly. Its intentional because ComparisionState is final, thus getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well, it cannot be changed without reflection. Overall, unless we want to fit in the java bean convention, there's no point of using getters layer.
 
 === Test data
 [source,java]
@@ -401,11 +397,13 @@ I'll stick with _zero_ name, as this is what the element is called in vavr. We k
 
 ----
 
+== Dealing with failures
 
 [source,java]
 ----
-// TODO fillme
+// fillme
 ----
+
 
 
 
