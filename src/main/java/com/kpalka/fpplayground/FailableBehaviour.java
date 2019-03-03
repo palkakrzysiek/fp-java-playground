@@ -88,6 +88,16 @@ class FailableBehaviour {
 
     var toAge = periodTo(now);
 
+    var N = 2
+
+    cs.getByNameWithTry(names.get(0)).flatMap(customer0 ->
+      cs.getByNameWithTry(names.get(1)).flatMap( customer1 ->
+        // ... and so on
+        cs.getByNameWithTry(names.get(N)).map(customerN -> List.of(
+            customer0, customer1, /* and so on */ customerN
+        ))));
+
+
     return Try.traverse(names, cs::getByNameWithTry) // Try<Seq<Optional<Customer>>>
         .map(customers -> customers // Seq<Optional<Customer>>
             // If you're interested how pattern matching can look like see http://blog.vavr.io/integrating-partial-functions-into-javaslang/

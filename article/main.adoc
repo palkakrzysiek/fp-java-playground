@@ -612,11 +612,24 @@ in the client code of this method you can add on the result
   }
 ----
 
-The first thing here is to use `Try.traverse` instead of mapping each name in the list like `name -> cs::getByNameWithTry`
+The first thing here is to use `Try.traverse` instead of mapping each name in the list like `name -> cs.getByNameWithTry(name)` With the latter we'd end up with `Stream<Try<Optional<Customer>>>` and what we're interested in is a kind of `Try<Stream<Optional<Customer>>>`, so that we have a `Stream<Optional<Customer>>` to process. The `traverse` method does the job of "flipping" a `Stream`, or actually `Seq` with `Try`.
+
+With a simplification it can be though about as
 
 [source,java]
 ----
+cs.getByNameWithTry(names.get(0)).flatMap(customer0 ->
+  cs.getByNameWithTry(names.get(1)).flatMap(customer1 -> /* and so on */
+    cs.getByNameWithTry(names.get(N)).map(customerN -> List.of(
+        customer0, customer1, /* and so on */ customerN
+    ))));
 ----
+
+If any of the `flatMap` s ends with `Try.Failure` (here if the `Try.of(() -> ...))` have caught an exception) the call chain is short-circuited and the end result is the first `Try.Failure`. Otherwise it's `Try.Success` with the list of processed elements.
+
+Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the way we can call `map` and `flatMap` plus some specific method like `onFailure`, `onSuccess`, `recover`, and `recoverWith`. So we're mapping a `Seq` of customers to their ages and reducing those to an average. The result can be processed further with `map` s and `flatMap` s, or we can finally call `.get()` first ensuring ourselves with `.isSuccess()` if the call succeeded.
+
+If we're into asynchronous processing we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). But then be careful not to call `.get` or we'd block the execution. What can be one than is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework of the library expects.
 
 
 Test data used in this section
@@ -642,30 +655,23 @@ Test data used in this section
   FailableBehaviour.CustomerService cs = new FailableBehaviour.CustomerService(testCustomers);
 ----
 
-Don't revert to isPresent
-Zip
-Throwing exceptions in the stream
-Try/Either vs try{}
-Fold vs reduce (sum)
-Future with coherent method naming
-Beware of mutable collections (immutables, getters-only Lombok)
-A look into the future (data classes, pattern matching)
+= Summary
+With some external libraries writing with functional style in Java becomes less painful. In examples above we didn't separate the program definition from its execution, which is difficult in a language without https://softwaremill.com/free-tagless-compared-how-not-to-commit-to-monad-too-early/[higher-kinded types] or a library like https://arrow-kt.io/docs/patterns/monads/[Arrow] for Kotlin. Nonetheless without mixing pre-java8 and post-lambda style (not using mutable collections, data structures, nor variables) we obtain easy to reason about code. A topic worth exploring for now http://blog.vavr.io/pattern-matching-essentials/[that's already available in vavr] and https://openjdk.java.net/jeps/8213076[may be in future added to Java] is pattern matching. It can simplify code like
 
-Optional in method parameters (why Lists are good, but Options not?)
-Why var, not var
+[source,java]
+----
+    .filter(Optional::isPresent)
+    .map(Optional::get)
+----
+with
 
-Jeśli decudujesz się na programowanie fuknyjne pozostań przy nim -- unikaj mutowania zmiennych przy map/flatMap -- robisz to po to, żeby móc łatwo prześledzić co się dzieje z kodem i chcesz uniknąć matwienia się, że dane zostaną zmienione gdzieś po drodze
+[source,java]
+----
+    .collect(
+        Case(Some($()), t -> t)
+    )
+----
+and the more complicated filtering conditions and transforming logic, the more pattern matching cleans up the code.
 
-An example with counting the number of elements in a collection (using atomic integer) versus collector
+Let me know what you're thoughts on this article and in general the topic of FP in Java because I'm curious if it's a goal worth striving for :)
 
-An example with comparing 2 subsequent elements in the collection with zip vs ???
-
-Future having the naming convention coherent with the rest of collections
-
-An example of transferring callback-based approach (cassandra) to Future based approach
-
-Używaj więc niemutowalnych struktur -- te z interfejsami VAVR-owymi mają przewagę nad javowymi nie mając metod set/update, które mogą mogą rzucić wyjątek przy próbie zmiany
-
-Jawnie opakuj rzeczy które mogą się nie powieść w Try/Either, wyjątki typu RuntimeExecption mogą być bolesne do debugowania -- bardzo więc zwracaj uwagę na to czy dany typ jest nullowalny
-
-how the patter matching could look like http://blog.vavr.io/integrating-partial-functions-into-javaslang
