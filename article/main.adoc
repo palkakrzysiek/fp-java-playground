@@ -304,6 +304,58 @@ First, Java's List is changed to vavr's one. Than in the https://static.javadoc.
 
 Note that creating a lazy `Stream` and than `.collect` ing the result is not obligatory in vavr's collections. This allows to clean up the code logic. If one switches to vavr completely, `.asJava()` becomes unnecessary as well.
 
+=== Generalizing with foldX
+
+Let's now use more universal mechanism when we want to access any state that in an imperative style would be a variable(s) updated in a loop.
+
+[source,java]
+----
+  @Value
+  private static class ComparisionState {
+    private Customer lastVale;
+    private io.vavr.collection.List<String> stateAcc;
+  }
+
+  static List<String> compareSubsequentChangesWithFoldLeft(List<Customer> customerStateSnapshots) {
+    if (customerStateSnapshots.size() < 2) return Collections.emptyList();
+    final var zero = new ComparisionState(customerStateSnapshots.get(0), io.vavr.collection.List.empty());
+    final var vavrList = io.vavr.collection.List.ofAll(customerStateSnapshots);
+    return vavrList
+        .drop(1)
+        .foldLeft(zero, (ComparisionState foldAcc, Customer c) ->
+            new ComparisionState(c, foldAcc.stateAcc.append(customerDiff(foldAcc.lastVale, c))))
+        .stateAcc
+        .asJava();
+  }
+----
+
+The `foldLeft` method (absent in Java's `Stream`) is generally used like
+
+[source,java]
+----
+.foldLeft(defaultState, (currentState, newElement) -> newState))
+----
+
+The default element is sometimes called _zero_, sometimes _unit_. To see why think about most basic examples of associative binary operations with _neutral_ elements (such combination is called a _monoid_)
+
+* Sum: the neutral element is 0 and the binary operation is + (hence zero)
+[source,java]
+----
+    assertThat(io.vavr.collection.List
+        .of(1, 2, 3, 4)
+        .foldLeft(0, (a, b) -> a + b))
+        .isEqualTo(10);
+----
+* Product: the neutral element is 1 and the binary operation is * (hence unit)
+[source,java]
+----
+    assertThat(io.vavr.collection.List
+        .of(1, 2, 3, 4)
+        .foldLeft(1, (a, b) -> a * b))
+        .isEqualTo(24);
+----
+
+I'll stick with _zero_ name, as this is what the element is called in vavr. We know that there allways be zero
 
 
 [source,java]

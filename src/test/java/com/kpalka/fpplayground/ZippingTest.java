@@ -81,4 +81,20 @@ class ZippingTest {
     assertThat(Zipping.compareSubsequentChangesWithFoldLeft(customers)).isEqualTo(expectedChangesDescriptions);
   }
 
+  @Test
+  void additionFoldLeft() {
+    assertThat(io.vavr.collection.List
+        .of(1, 2, 3, 4)
+        .foldLeft(0, (a, b) -> a + b))
+        .isEqualTo(10);
+  }
+
+  @Test
+  void productFoldLeft() {
+    assertThat(io.vavr.collection.List
+        .of(1, 2, 3, 4)
+        .foldLeft(1, (a, b) -> a * b))
+        .isEqualTo(24);
+  }
+
 }
