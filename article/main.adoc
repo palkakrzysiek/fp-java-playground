@@ -398,12 +398,79 @@ After reducing the list to just the state object, we access its `.stateAcc` fiel
 ----
 
 == Dealing with failures
+Checked exceptions don't blend with `Streams`. Runtime exceptions don't blend with predictable methods invocations. Let's start with such service
+
+[source,java]
+----
+  @AllArgsConstructor
+  static class CustomerService {
+    private io.vavr.collection.List<Customer> customersSource;
+
+    static class ServiceException extends Exception {
+      ServiceException(String msg) {
+        super(msg);
+      }
+    }
+
+    Optional<Customer> getByNameOptionalThrowing(String name) throws ServiceException {
+      if ("Error-prone Customer".equals(name)) throw new ServiceException("Life is life... Nananana");
+      return customersSource.find(c -> c.getName().equals(name)).toJavaOptional();
+    }
+  }
+----
+
+And a task of getting the average age of a list of customers. First attempt
+
+[source,java]
+----
+    try {
+      res = names
+          .stream()
+          .map(name -> cs.getByNameOptionalThrowing(name))
+          // further processing
+          .collect(Collectors.toList());
+    } catch (CustomerService.ServiceException e) {
+      log.error("An error obtaining customers", e);
+    }
+----
+
+And a disappointment
+____
+Error:(77, 52) java: unreported exception com.kpalka.fpplayground.FailableBehaviour.CustomerService.ServiceException; must be caught or declared to be thrown
+Error:(80, 7) java: exception com.kpalka.fpplayground.FailableBehaviour.CustomerService.ServiceException is never thrown in body of corresponding try statement
+____
+
+`.map` won't accept something that throws a checked exception, so the second attempt
+
+[source,java]
+----
+  static Integer getAvgAge(CustomerService cs, List<String> names, ZonedDateTime now) {
+    // Don't do this at home
+    Function<String, Optional<Customer>> aHackYouCanSometimesSpot = name -> {
+      try {
+        return cs.getByNameOptionalThrowing(name);
+      } catch (CustomerService.ServiceException e) {
+        // A service tries to inform me in the method signature that something can go wrong, but I cannot use a method that throws an exception inside `.map()`. But I REALLY want to use that fancy Stream feature... Hmm...
+        throw new RuntimeException(e);
+      }
+    };
+
+    var toAge = periodTo(now);
+
+    // I often see similar examples used to show the possibilities of Stream<T> and method references...
+    return names
+        .stream()
+        .map(aHackYouCanSometimesSpot) // ... and when I see such a call to service as a fragment of stream pipeline I smell something bad. Things can fail. In a nasty way. And I think such situations make some people, softly said, not very willing to incorporate the newer features of the language to their daily usage
+        // the rest of processing
+  }
+----
+
+Now by calling getAvgAge we aren't even informed that something can go wrong, so it's easy to forget to handle an error. The argument of easier reasoning about a program written in the functional style apparently doesn't work here.
 
 [source,java]
 ----
 // fillme
 ----
-
 
 
 
