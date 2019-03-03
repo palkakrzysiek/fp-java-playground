@@ -23,7 +23,7 @@ class TypeBoundsPlayground {
   Function<RawMaterial, Vehicle> rawMaterialToVehicle = rawMaterial -> vehicleObject;
 
   @Test
-  public void typeBoundsTest() {
+  void typeBoundsTest() {
 
     // Optional<Vehicle> vehicle = Optional.of(steelObject).map((Function<? super Steel, ? extends Vehicle>) mapper);
 
@@ -32,6 +32,7 @@ class TypeBoundsPlayground {
     Optional<Vehicle> vehicle3 = Optional.of(steelObject).map(rawMaterialToCar);
     Optional<Vehicle> vehicle4 = Optional.of(steelObject).map(rawMaterialToVehicle);
 
+    // no assertions, just checking if the code compiles
   }
 
 

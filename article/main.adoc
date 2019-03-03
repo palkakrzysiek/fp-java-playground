@@ -1,5 +1,12 @@
 = Dealing with Java quircks while switching to FP style
 
+
+.CC0/Public domain  | Photo pexels.com/@raghav-rajvanshi-709054 | Edited kpalka.com
+[#article_image]
+[caption=""]
+image::article_image.jpg[]
+
+
 _originally posted on the Idemia Digital Lab Poland https://www.facebook.com/idemiadigitallabpoland/[Facebook page]_
 
 Functional programming promises easy testing and reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling program definition with interpretation.
