@@ -209,7 +209,63 @@ Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of th
 
 ==== Side note: developing intuition about the type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
 
-// TODO
+Method signatures like
+
+[source,java]
+----
+public <U> Optional<U> map(Function<? super T, ? extends U> mapper)
+public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper
+----
+
+aren't so scary when you know the reason for putting the type bounds. Having the following types
+
+[source,java]
+----
+  interface RawMaterial {}
+  interface Steel extends RawMaterial {}
+  interface Vehicle {}
+  interface Car extends Vehicle {}
+----
+
+And the functions
+
+[source,java]
+----
+  RawMaterial rawMaterialObject = new RawMaterial() { };
+  Steel steelObject = new Steel() { };
+  Vehicle vehicleObject = new Vehicle() { };
+  Car carObject = new Car() { };
+
+  Function<Steel, Vehicle> steelToVehicle = steel -> vehicleObject;
+  Function<Steel, Car> steelToCar = steel -> carObject;
+  Function<RawMaterial, Car> rawMaterialToCar = rawMaterial -> carObject;
+  Function<RawMaterial, Vehicle> rawMaterialToVehicle = rawMaterial -> vehicleObject;
+----
+
+And an assignment
+
+[source,java]
+----
+    Optional<Vehicle> vehicle = Optional.of(steelObject).map((Function<? super Steel, ? extends Vehicle>) mapper);
+----
+
+Think what can we put instead of the `mapper`? In other words https://en.wikipedia.org/wiki/Liskov_substitution_principle[what are the subtypes] of `Function<? super Steel, ? extends Vehicle>` and why there's `super` next to the `Steel` and `extends` next to the `Vehicle`?
+
+It turn out the code compiles with each of our mappers
+
+[source,java]
+----
+    Optional<Vehicle> vehicle1 = Optional.of(steelObject).map(steelToVehicle);
+    Optional<Vehicle> vehicle2 = Optional.of(steelObject).map(steelToCar);
+    Optional<Vehicle> vehicle3 = Optional.of(steelObject).map(rawMaterialToCar);
+    Optional<Vehicle> vehicle4 = Optional.of(steelObject).map(rawMaterialToVehicle);
+
+----
+
+Because we can use a function that can produce a `Vehicle` or something more concrete like `Car` from `Steel` and we can't complain if `RawMaterial` is enough for it.
+In other words a function B is a subtype if a function A if the function B returns a subtype of the function A and takes a supertype of the function A.
+And in another words functions are covariant in their return types and contravariant in their input types.
+
 
 == What about the processed `Stream` elements?
 A temptation to use mutable state in a `Stream<T>` comes when we need to access a previous element that has already been processed. Say we need to summarize changes in `Customer` objects for auditing purposes. First come up with a  machinery for producing a string with differences between 2 objects.

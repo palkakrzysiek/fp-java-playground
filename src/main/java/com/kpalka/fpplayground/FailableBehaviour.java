@@ -84,19 +84,10 @@ class FailableBehaviour {
         .getAvgYear(now);
   }
 
+
   static Try<Integer> getAvgAgeWithTry(CustomerService cs, List<String> names, ZonedDateTime now) {
 
     var toAge = periodTo(now);
-
-    var N = 2
-
-    cs.getByNameWithTry(names.get(0)).flatMap(customer0 ->
-      cs.getByNameWithTry(names.get(1)).flatMap( customer1 ->
-        // ... and so on
-        cs.getByNameWithTry(names.get(N)).map(customerN -> List.of(
-            customer0, customer1, /* and so on */ customerN
-        ))));
-
 
     return Try.traverse(names, cs::getByNameWithTry) // Try<Seq<Optional<Customer>>>
         .map(customers -> customers // Seq<Optional<Customer>>
