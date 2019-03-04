@@ -166,7 +166,7 @@ For completeness here's the usage usage (and one country name for simplicity)
 
 We can compare the original and new values in the log statement, as the objects from the original list couldn't be modified in the `.map(...)` stream pipeline element.
 
-Unfortunately, the `java.util.List` itself is mutable. The caller of the `normalizeCountry` method don't know if it won't mess with the parameter structure by adding or removing elements. We'll address it later.
+Unfortunately, the `java.util.List` itself is mutable. The caller of the `normalizeCountry` method doesn't know if it won't mess with the parameter structure by adding or removing elements. We'll address it later.
 
 ==== Side note: `Optional<T>` as a field
 When you try to use `Optional<T>` as a field in IntelliJ you'll be greeted with a warning
