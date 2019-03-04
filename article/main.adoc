@@ -790,7 +790,7 @@ with
 ----
 and the more complicated filtering conditions and transforming logic, the more pattern matching cleans up the code.
 
-Big thank you goes to https://twitter.com/pawelwlodarski[Paweł Włodarski], who encouraged me to write this article; https://github.com/pioluk[Piotr Łukomiak], who thoroughly reviewed and corrected it, and users of JVM-Poland Slack group for ideas.
+Big thank you goes to https://twitter.com/pawelwlodarski[Paweł Włodarski], who encouraged me to write this article; https://github.com/pioluk[Piotr Łukomiak] and https://www.linkedin.com/in/annaskawinska/[Anna Skawińska], who thoroughly reviewed and corrected it; and users of JVM-Poland Slack group for ideas!
 
 Let me know what you're thoughts on this article and in general, the topic of FP in Java because I'm curious if it's a goal worth striving for :)
 
