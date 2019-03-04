@@ -179,7 +179,7 @@ Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of th
 
 ==== Side note: honing intuition about type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
 
-Method signatures like
+You'll encounter a lot of method signatures like
 
 [source,java]
 ----
@@ -187,7 +187,7 @@ public <U> Optional<U> map(Function<? super T, ? extends U> mapper)
 public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper
 ----
 
-aren't so scary when you know the reason for putting the type bounds. Having the following types...
+while reading the documentation of vavr. Such signatures aren't so scary when you know the reason for putting the type bounds. Having the following types...
 
 [source,java]
 ----
@@ -693,7 +693,7 @@ Now we're ready to use the new method of the service.
   }
 ----
 
-in the client code of this method you can add on the result
+in the client code of this method, you can add on the result
 
 [source,java]
 ----
@@ -737,7 +737,7 @@ cs.getByNameWithTry(names.get(0)).flatMap(customer0 ->
     ))));
 ----
 
-If any of the `flatMap` s end with `Try.Failure` (here if the `Try.of(() -> ...)` caught an exception) the call chain is short-circuited and the end result is the first `Try.Failure`. Otherwise it's `Try.Success` with the list of processed elements.
+If any of the `flatMap` s end with `Try.Failure` (here if the `Try.of(() -> ...)` caught an exception) the call chain is short-circuited and the end result is the first `Try.Failure`. Otherwise, it's `Try.Success` with the list of processed elements.
 
 Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the way we can call `map` and `flatMap`, plus some specific method like `onFailure`, `onSuccess`, `recover`, and `recoverWith`. So we're mapping a `Seq` of customers to their ages and reducing those to an average. The result can be processed further with `map` s and `flatMap` s, or we can finally call `.get()` first ensuring ourselves with `.isSuccess()` if the call succeeded.
 
