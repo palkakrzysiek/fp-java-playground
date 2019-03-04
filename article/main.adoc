@@ -18,7 +18,7 @@ This limits the possibility of writing more complicated logic without a nasty mi
 
 In this article, we'll explore a couple of libraries that make it easier to stay with the FP side.
 
-_All code examples are provided in https://github.com/palkakrzysiek/fp-java-playground[this GitHub repository]._
+_All code examples and AsciiDoc version of this article are provided in https://github.com/palkakrzysiek/fp-java-playground[this GitHub repository]._
 
 == The basics -- immutable data classes
 It's not an easy task to operate on data classes without much boilerplate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok].
