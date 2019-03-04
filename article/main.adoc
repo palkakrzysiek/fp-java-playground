@@ -221,7 +221,7 @@ and an assignment...
 
 Think what can we put instead of the `mapper`? In other words https://en.wikipedia.org/wiki/Liskov_substitution_principle[what are the subtypes] of `Function<? super Steel, ? extends Vehicle>` and why there's `super` next to the `Steel` and `extends` next to the `Vehicle`?
 
-It turn out the code compiles with all our mappers.
+It turns out the code compiles with all our mappers.
 
 [source,java]
 ----
