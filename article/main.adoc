@@ -60,7 +60,7 @@ class Customer {
 
 Here, the `@Value` annotation creates all the necessary methods (assuming setters are not necessary) to be used in the immutable class. To use it in IntelliJ you must turn on annotation processors in settings.
 
-So far so good. The problem appears when one wants to change a single filed in an object. Normally it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
+So far so good. The problem appears when one wants to change a single field in an object. Normally it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
 
 To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. Mentioned annotation allows to summon the builder with pre-filled fields from an existing object.
 
@@ -127,7 +127,7 @@ Now a more complicated example. Given that we must normalize all the country val
   }
 ----
 
-The `country` filed is defined as `Optional<String>`, so don't revert to using `.isPresent()` + `.get()` which makes the code look not better than `if (x != null) {...}`. Remember that `Optional<A>` has convenient `.map(A -> B)` and `.flatMap(A -> Optional<B>)` methods.
+The `country` field is defined as `Optional<String>`, so don't revert to using `.isPresent()` + `.get()` which makes the code look not better than `if (x != null) {...}`. Remember that `Optional<A>` has convenient `.map(A -> B)` and `.flatMap(A -> Optional<B>)` methods.
 
 No need of rewriting each field, but still some nested code, is probably the most we can get if we stick to Java. To see how replacing a single element in a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
 
