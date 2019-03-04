@@ -332,7 +332,7 @@ _(test data at the end of the section)_
   }
 ----
 
-And the use it
+And then use it
 
 [source,java]
 ----
@@ -371,7 +371,7 @@ It's a nasty hack, of course. All the promises of simplicity about reasoning abo
 
 An easy way to compare two subsequent elements is to combine two streams -- the original one and one with the first element skipped. Unfortunately `java.util.Stream` lacks such a method. Insufficiencies of Java's standard libraries make it a high time to start using the http://www.vavr.io/[vavr] library.
 
-I'll be addressing vavr classes with fully qualified package names (`io.vavr. ...`) to avoid confusion which class in the code example belongs to the standard Java, and which not. Normally you can import vavr counterparts of Java classes to make the code more succinct.
+I'll be addressing vavr classes with fully qualified package names (`io.vavr. ...`) to avoid confusion which class in the code example belongs to the standard Java, and which does not. Normally, you can import vavr counterparts of Java classes to make the code more succinct.
 
 Here's how once can achieve the goal with vavr's `List`
 
@@ -386,9 +386,9 @@ Here's how once can achieve the goal with vavr's `List`
   }
 ----
 
-First, Java's List is changed to vavr's one. Than in the https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[zipWith] the original collection is combined with the one without the first element using `Zipping::customerDiff` as a method taking two elements, one from each collection, and returning the result. It's worth to check other https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[methods provided by vavr collections] which can be missing in Java's `Stream`.
+First, Java's `List` is changed to vavr's one. Then in the https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[zipWith] the original collection is combined with the one without the first element using `Zipping::customerDiff` as a method taking two elements, one from each collection, and returning the result. It's worth to check other https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[methods provided by vavr collections] which can be missing in Java's `Stream`.
 
-Note that creating a lazy `Stream` and than `.collect` ing the result is not obligatory in vavr's collections. This allows to clean up the code logic. If one switches to vavr completely, `.asJava()` becomes unnecessary as well.
+Note that creating a lazy `Stream` and then `.collect` ing the result is not obligatory in vavr's collections. This allows to clean up the code logic. If one switches to vavr completely, `.asJava()` becomes unnecessary as well.
 
 === Generalizing with foldX
 
@@ -419,10 +419,10 @@ The `foldLeft` method (absent in Java's `Stream`) is generally used like
 
 [source,java]
 ----
-.foldLeft(defaultState, (currentState, newElement) -> newState))
+.foldLeft(initialState, (currentState, element) -> newState))
 ----
 
-The default element is sometimes called _zero_, sometimes _unit_. To see why think about most basic examples of associative binary operations with _neutral_ elements (such combination is called a _monoid_)
+The initial element is sometimes called _zero_, sometimes _unit_. To see why think about most basic examples of associative binary operations with _neutral_ elements (such a combination is called a _monoid_)
 
 * Sum: the neutral element is 0 and the binary operation is + (hence zero)
 [source,java]
@@ -443,13 +443,13 @@ The default element is sometimes called _zero_, sometimes _unit_. To see why thi
 
 I'll stick with _zero_ name, as this is what the argument is called in vavr. We know that there always be a zero element due to the guard code `if (customerStateSnapshots.size() < 2) return Collections.emptyList();`.
 
-It could be simplified if there were a type like `NonEmptyList` with `foldLeft` not requiring the zero element. Such addition was proposed on the https://github.com/vavr-io/vavr/issues/1244[vavr's issue tracker], but apparently wasn't sufficiently motivated and was rejected.
+It could be simplified if there was a type like `NonEmptyList` with `foldLeft` not requiring the zero element. Such addition was proposed on the https://github.com/vavr-io/vavr/issues/1244[vavr's issue tracker], but apparently wasn't sufficiently motivated and was rejected.
 
-Because the list used in `stateAcc` is immutable (like all vavr collections), the `append` method executed on it returns a new list leaving the original one without any mutation, so we don't need to worry about it.
+Because the list used in `stateAcc` is immutable (like all vavr collections), the `append` method executed on it returns a new list leaving the original intact, so we don't need to worry about it.
 
 After reducing the list to just the state object, we access its `.stateAcc` field, and because it is a vavr `List` we convert it to the Java counterpart with `.asJava()` to match the expected return type.
 
-Notice that `.stateAcc` is not accessed via a getter, but directly. Its intentional because ComparisionState is final, thus getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well, it cannot be changed without reflection.
+Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisionState` is final, thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well, it cannot be changed without using reflection.
 
 Overall, unless we want to fit in the java bean convention, there's no point of using a getters layer.
 
@@ -497,7 +497,7 @@ _Test data used in this section_
 == Dealing with failures
 Checked exceptions don't blend with `Streams`. Runtime exceptions don't blend with predictable methods invocations.
 
-Let's start with such service
+Let's start with such a service
 
 [source,java]
 ----
@@ -576,9 +576,9 @@ ____
 
 Now, by calling `getAvgAge` we aren't even informed that something can go wrong, so it's easy to forget to handle an error. The argument of easier reasoning about a program written in the functional style apparently doesn't apply here.
 
-For a moment let's try to finish the broken implementation and then fix error handling part.
+For a moment let's try to finish the broken implementation and then fix the error handling part.
 
-We're going to need a class representing a state that will be used in the reducing a stream of customers' age to the average value
+We're going to need a class representing a state that will be used in reducing a stream of customers' age to the average value
 
 [source,java]
 ----
@@ -655,7 +655,7 @@ It's worth noticing the (over)complicated `reduce` available in Java's Stream. C
 
 In the first, the new accumulated state is dependent on the previous previous value of the stream. In the second, states can be combined independently, which means they can be paralleled. It's great if you need it. If you don't you have to deal with the burden of defining additional binary operation, here `AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter)` next to `AvgPeriodCounter plus(Period period)`. So if we already have the whole list in memory, using `foldX` seams to be a sexier solution than `reduce`.
 
-Now its time to tame the method calls that can fail. vavr offers Try<T> and Either<E, T> classes with which you can inform about possible failre in the return type. `Either` is more powerful as you can put in `Left` (failure) part anything signaling the error. `Try` can be seen as
+Now it's time to tame the method calls that can fail. vavr offers Try<T> and Either<E, T> classes with which you can inform about possible failre in the return type. `Either` is more powerful as you can put in `Left` (failure) part anything signaling the error. `Try` can be seen as
 
 [source,java]
 ----
@@ -670,7 +670,7 @@ So the errors can be only a (sub)instance of `Throwable`. Say it's good enough f
       return Try.of(() -> getByNameOptionalThrowing(name));
 ----
 
-Notice that there's no `throws ServiceException` in the method signature, which means it can be used within `Stream`. Notice also the construct of lazy calling another method `() -> methodThatThrows()`. Without it the exception would be thrown immediately, before vavr had a chance to wrap call execution into `Try.Success` or `Try.Failure`.
+Notice that there's no `throws ServiceException` in the method signature, which means it can be used within `Stream`. Notice that the  `getByNameOptionalThrowing(name)` call is now wrapped in a lambda expression. Without it the exception would be thrown immediately, before vavr had a chance to wrap call execution into `Try.Success` or `Try.Failure`.
 
 Now we're ready to use the new method of the service.
 
@@ -726,7 +726,7 @@ in the client code of this method you can add on the result
 
 The first thing here is to use `Try.traverse` instead of mapping each name in the list like `name -> cs.getByNameWithTry(name)`. With the latter we'd end up with `Stream<Try<Optional<Customer>>>` and what we're interested in is a kind of `Try<Stream<Optional<Customer>>>`, so that we have a `Stream<Optional<Customer>>` to process. The `traverse` method does the job of "flipping" a `Stream`, or actually `Seq`, with `Try`.
 
-With a simplification it can be though about as
+With a simplification it can be thought of as
 
 [source,java]
 ----
@@ -737,7 +737,7 @@ cs.getByNameWithTry(names.get(0)).flatMap(customer0 ->
     ))));
 ----
 
-If any of the `flatMap` s ends with `Try.Failure` (here if the `Try.of(() -> ...)` have caught an exception) the call chain is short-circuited and the end result is the first `Try.Failure`. Otherwise it's `Try.Success` with the list of processed elements.
+If any of the `flatMap` s end with `Try.Failure` (here if the `Try.of(() -> ...)` caught an exception) the call chain is short-circuited and the end result is the first `Try.Failure`. Otherwise it's `Try.Success` with the list of processed elements.
 
 Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the way we can call `map` and `flatMap`, plus some specific method like `onFailure`, `onSuccess`, `recover`, and `recoverWith`. So we're mapping a `Seq` of customers to their ages and reducing those to an average. The result can be processed further with `map` s and `flatMap` s, or we can finally call `.get()` first ensuring ourselves with `.isSuccess()` if the call succeeded.
 
