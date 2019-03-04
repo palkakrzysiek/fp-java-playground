@@ -1,4 +1,4 @@
-= Dealing with Java quircks while switching to FP style
+= Dealing with Java quirks while switching to FP style
 
 .CC0/Public domain  | Photo pexels.com/@raghav-rajvanshi-709054 | Edited kpalka.com
 [#article_image]
