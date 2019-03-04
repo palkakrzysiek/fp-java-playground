@@ -131,7 +131,7 @@ The `country` filed is defined as `Optional<String>`, so don't revert to using `
 
 No need of rewriting each field, but still some nested code, is probably the most we can get if we stick to Java. To see how replacing a single element in a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
 
-For completeness here's the usage usage (and one country name for simplicity)
+For completeness here's the usage (and one country name for simplicity)
 
 [source,java]
 ----
