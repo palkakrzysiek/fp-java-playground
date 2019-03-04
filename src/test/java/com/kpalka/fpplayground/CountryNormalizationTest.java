@@ -59,7 +59,8 @@ class CountryNormalizationTest {
     var result = deactivateCustomers(originalList);
 
     result.forEach(customer ->
-        assertThat(customer.getActive())
+        assertThat(customer)
+            .extracting(Customer::getActive)
             .describedAs("Customer [" + customer + "] should not be active")
             .isEqualTo(FALSE)
     );
