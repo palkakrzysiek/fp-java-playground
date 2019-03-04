@@ -7,18 +7,23 @@ image::article_image.jpg[]
 
 
 
-_originally posted on the Idemia Digital Lab Poland https://www.facebook.com/idemiadigitallabpoland/[Facebook page]_
+_originally posted on the https://bulldogjob.com/companies/profiles/679-idemia[Idemia Digital Lab Poland] https://www.facebook.com/idemiadigitallabpoland/[Facebook page]_
 
-Functional programming promises easy testing and reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling program definition with interpretation.
+Functional programming promises easy testing and unproblematic reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling the program definition with interpretation.
 
 Thus Java constantly gains more features supporting writing code in functional style, starting with 2014's addition of lambdas and streams of collection elements.
-Yet it looks like the language architects are not convinced if fully support that trend by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can convey information about a failure like `Try<T>` or `Either<E, T>` which limits the possibility of writing more complicated logic without nasty mixture of good ol' `try {}` s and mutable elements.
-Here we'll explore a couple of libraries that make it easier to stay with the FP side.
+Yet it looks like the language architects are not convinced if fully embrace that trend by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can carry information about a failure like `Try<T>` or `Either<E, T>`.
+
+This limits the possibility of writing more complicated logic without a nasty mixture of good ol' `try {}` s and mutable elements.
+
+In this article we'll explore a couple of libraries that make it easier to stay with the FP side.
 
 _All code examples are provided in https://github.com/palkakrzysiek/fp-java-playground[this github repository]._
 
-== The basics – data classes
-It's not an easy task to operate on data classes without a lot of boilerpate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok]. The former generates the code with concrete implementations form abstract classes, with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. As I don't mind it as long as IDEs and maven support provides good support, and as there are more chances you already have it in your project, I'll pick Lombok for subsequent examples.
+== The basics -- immutable data classes
+It's not an easy task to operate on data classes without a lot of boilerpate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok].
+
+The former generates the code with concrete implementations form abstract classes, while with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. I don't mind it as long as IDEs and Maven provides good support the library and as there are more chances you already have it in your project, I'll pick Lombok for the subsequent examples.
 
 === How to live without setters
 
@@ -39,9 +44,6 @@ class Customer {
   @Value
   @Builder(toBuilder = true)
   static class Addrees {
-
-    // Note that if you want to (de)serialize Optionals with Jackson you need to add jackson-datatype-jdk8 dependency and register Jdk8Module module in the Object mapper
-
     private Optional<String> line1;
     private Optional<String> line2;
     private Optional<String> zipCode;
@@ -56,11 +58,11 @@ class Customer {
 }
 ----
 
-Here, the `@Value` annotation creates all the necessary methods (not including setters) to be used in immutable class. To use it in IntelliJ you must turn on annotation processors in settings.
+Here, the `@Value` annotation creates all the necessary methods (assuming setters are not necessary) to be used in the immutable class. To use it in IntelliJ you must turn on annotation processors in settings.
 
-So far so good, the problem appears when one wants to change a single filed in an object. Normally it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
+So far so good. The problem appears when one wants to change a single filed in an object. Normally it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
 
-To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true` (unfortunately it's not a default value). This allows to summon the builder with pre-filled fields from an existing object.
+To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. Mentioned annotation allows to summon the builder with pre-filled fields from an existing object.
 
 As an simple example let's use the builder to solve a task of deactivating all users in a list.
 
@@ -77,10 +79,174 @@ As an simple example let's use the builder to solve a task of deactivating all u
   }
 ----
 
-Given a such test data provider
+_(test data at the end of the section)_
 
 [source,java]
 ----
+  @Test
+  void deactivateConsumersTest() {
+    var originalList = getTestConsumers();
+
+    var result = deactivateCustomers(originalList);
+
+    result.forEach(customer ->
+        assertThat(customer.getActive())
+            .describedAs("Customer [" + customer + "] should not be active")
+            .isEqualTo(FALSE)
+    );
+
+    assertThat(originalList)
+        .describedAs("Customer objects in the original list are not modified")
+        .containsExactly(getTestConsumers().toArray(new Customer[0]));
+  }
+----
+
+Now a more complicated example. Given that we must normalize all the country values from local names to English ones in a collection of `Customer` s.
+
+[source,java]
+----
+
+  // the best we can get in a language without type aliases
+  @FunctionalInterface
+  private interface CustomerMapper extends Function<Customer, Customer> {
+  }
+
+  private static CustomerMapper countryRenamer(String oldValue, String newValue) {
+    return customer -> {
+      var oldAddress = customer.getAddress();
+      return customer
+          .toBuilder()
+          .address(oldAddress
+              .toBuilder()
+              .country(oldAddress
+                  .getCountry()
+                  .map(countryName -> countryName.replace(oldValue, newValue)))
+              .build())
+          .build();
+    };
+  }
+----
+
+The `country` filed is defined as `Optional<String>`, so don't revert to using `.isPresent()` + `.get()` which makes the code look not better than `if (x != null) {...}`. Remember that `Optional<A>` has convenient `.map(A -> B)` and `.flatMap(A -> Optional<B>)` methods.
+
+No need of rewriting each field, but still some nested code, is probably the most we can get if we stick to Java. To see how replacing a single element in a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
+
+For completeness here's the usage usage (and one country name for simplicity)
+
+[source,java]
+----
+  static List<Customer> normalizeCountry(List<Customer> customers) {
+    var oldVal = "Polska";
+    var newVal = "Poland";
+    var result = customers
+        .stream()
+        // as customer is immutable we dont have to worry about changes to the original values in the countryRenamer, whatever its implementation is...
+        .map(countryRenamer(oldVal, newVal))
+        .collect(Collectors.toList());
+    // ... and can compare the original list to the new list
+    if (log.isDebugEnabled()) log.debug("Normalized countries from {} resulting in {}", customers, result);
+    return result;
+  }
+----
+
+[source,java]
+----
+  @Test
+  void countryNamesAfterNormalizationContainOnlyAllowedValues() {
+    normalizeCountry(getTestConsumers()) .forEach(customer ->
+        customer.getAddress().getCountry().ifPresent(countryName ->
+            assertThat(countryName)
+            .describedAs("The country name of [" + customer + "] after the normalization, if present should be within allowed value set ["+ ALlOWED_COUNTRY_NAMES + "]")
+            .isIn(ALlOWED_COUNTRY_NAMES)
+            )
+        );
+  }
+
+----
+
+We can compare the original and new values in the log statement, as the objects from the original list couldn't be modified in the `.map(...)` stream pipeline element.
+
+Unfortunately, the `java.util.List` itself is mutable. The caller of the `normalizeCountry` method don't know if it won't mess with the parameter structure by adding or removing elements. We'll address it later.
+
+==== Side note: `Optional<T>` as a field
+When you try to use `Optional<T>` as a field in IntelliJ you'll be greeted with a warning
+
+____
+Inspection info: Reports any uses of java.util.Optional<T>, java.util.OptionalDouble, java.util.OptionalInt, java.util.OptionalLong or com.google.common.base.Optional as the type for a field or a parameter. Optional was designed to provide a limited mechanism for library method return types where there needed to be a clear way to represent "no result". Using a field with type java.util.Optional is also problematic if the class needs to be Serializable, which java.util.Optional is not.
+____
+
+Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. The Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. With Lombok you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
+
+==== Side note: honing intuition about type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
+
+Method signatures like
+
+[source,java]
+----
+public <U> Optional<U> map(Function<? super T, ? extends U> mapper)
+public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper
+----
+
+aren't so scary when you know the reason for putting the type bounds. Having the following types...
+
+[source,java]
+----
+  interface RawMaterial {}
+  interface Steel extends RawMaterial {}
+  interface Vehicle {}
+  interface Car extends Vehicle {}
+----
+
+and the functions...
+
+[source,java]
+----
+  RawMaterial rawMaterialObject = new RawMaterial() { };
+  Steel steelObject = new Steel() { };
+  Vehicle vehicleObject = new Vehicle() { };
+  Car carObject = new Car() { };
+
+  Function<Steel, Vehicle> steelToVehicle = steel -> vehicleObject;
+  Function<Steel, Car> steelToCar = steel -> carObject;
+  Function<RawMaterial, Car> rawMaterialToCar = rawMaterial -> carObject;
+  Function<RawMaterial, Vehicle> rawMaterialToVehicle = rawMaterial -> vehicleObject;
+----
+
+and an assignment...
+
+[source,java]
+----
+    Optional<Vehicle> vehicle = Optional.of(steelObject).map((Function<? super Steel, ? extends Vehicle>) mapper);
+----
+
+Think what can we put instead of the `mapper`? In other words https://en.wikipedia.org/wiki/Liskov_substitution_principle[what are the subtypes] of `Function<? super Steel, ? extends Vehicle>` and why there's `super` next to the `Steel` and `extends` next to the `Vehicle`?
+
+It turn out the code compiles with all our mappers.
+
+[source,java]
+----
+    Optional<Vehicle> vehicle1 = Optional.of(steelObject).map(steelToVehicle);
+    Optional<Vehicle> vehicle2 = Optional.of(steelObject).map(steelToCar);
+    Optional<Vehicle> vehicle3 = Optional.of(steelObject).map(rawMaterialToCar);
+    Optional<Vehicle> vehicle4 = Optional.of(steelObject).map(rawMaterialToVehicle);
+
+----
+
+It's because we can use a function that can produce a `Vehicle` or something more concrete like `Car` from `Steel`. And we can't complain if just any `RawMaterial`, not necessarily `Steel` is enough for it.
+
+In other words, a function B is a subtype of a function A if the function B returns a subtype of the function A and takes a supertype of the function A.
+
+And in another words functions are covariant in their return types and contravariant in their input types.
+
+In practice if you see `? super` next to the type you can assume it's some kind of an input and if you see `? extends` you can assume it's come kind of an output.
+
+---
+
+_Test data used in this section_
+
+[source,java]
+----
+  Set<String> ALlOWED_COUNTRY_NAMES = Set.of("USA", "France", "India", "Poland");
 
   List<Customer> getTestConsumers() {
     return List.of(
@@ -116,169 +282,10 @@ Given a such test data provider
   }
 ----
 
-
-[source,java]
-----
-  @Test
-  void deactivateConsumersTest() {
-    var originalList = getTestConsumers();
-
-    var result = deactivateCustomers(originalList);
-
-    result.forEach(customer ->
-        assertThat(customer.getActive())
-            .describedAs("Customer [" + customer + "] should not be active")
-            .isEqualTo(FALSE)
-    );
-
-    assertThat(originalList)
-        .describedAs("Customer objects in the original list are not modified")
-        .containsExactly(getTestConsumers().toArray(new Customer[0]));
-  }
-----
-
-Now, more complicated example. Given that we must normalize all the country values from local to English names in a collection of `Customer`s.
-
-
-[source,java]
-----
-
-  // the best we can get in a language without type aliases
-  @FunctionalInterface
-  private interface CustomerMapper extends Function<Customer, Customer> {
-  }
-
-  private static CustomerMapper countryRenamer(String oldValue, String newValue) {
-    return customer -> {
-      var oldAddress = customer.getAddress();
-      return customer
-          .toBuilder()
-          .address(oldAddress
-              .toBuilder()
-              .country(oldAddress
-                  .getCountry()
-                  // don't revert to isPresent which makes the code looks not better than if (x != null) {...}
-                  // remember that Optional<A> has convenient .map(A -> B) and .flatMap(A -> Optional<B>) methods
-                  .map(countryName -> countryName.replace(oldValue, newValue)))
-              .build())
-          .build();
-    };
-  }
-----
-
-No need of rewriting each field, but still some nested code, is probably the most we can get if we stick to Java. To see how replacing a single element is a nested structure can be cleaned up in other languages check the https://julien-truffaut.github.io/Monocle/optics/lens.html[Lenses concept].
-
-For completeness here's the usage usage (and one country name for simplicity)
-
-[source,java]
-----
-  static List<Customer> normalizeCountry(List<Customer> customers) {
-    var oldVal = "Polska";
-    var newVal = "Poland";
-    var result = customers
-        .stream()
-        // as customer is immutable we dont have to worry about changes to the original values in the countryRenamer, whatever its implementation is...
-        .map(countryRenamer(oldVal, newVal))
-        .collect(Collectors.toList());
-    // ... and can compare the original list to the new list
-    if (log.isDebugEnabled()) log.debug("Normalized countries from {} resulting in {}", customers, result);
-    return result;
-  }
-----
-
-[source,java]
-----
-  Set<String> ALlOWED_COUNTRY_NAMES = Set.of("USA", "France", "India", "Poland");
-
-  @Test
-  void countryNamesAfterNormalizationContainOnlyAllowedValues() {
-    normalizeCountry(getTestConsumers()) .forEach(customer ->
-        customer.getAddress().getCountry().ifPresent(countryName ->
-            assertThat(countryName)
-            .describedAs("The country name of [" + customer + "] after the normalization, if present should be within allowed value set ["+ ALlOWED_COUNTRY_NAMES + "]")
-            .isIn(ALlOWED_COUNTRY_NAMES)
-            )
-        );
-  }
-
-----
-
-We can compare the original and new values in the log statement, as the objects from the original list couldn't be modified in the `.map(...)` stream pipeline element.
-
-==== Side note: `Optional<T>` as a field
-When you try to use `Optional<T>` as a field in IntelliJ you'll be greeted with a warning
-
-____
-Inspection info: Reports any uses of java.util.Optional<T>, java.util.OptionalDouble, java.util.OptionalInt, java.util.OptionalLong or com.google.common.base.Optional as the type for a field or a parameter. Optional was designed to provide a limited mechanism for library method return types where there needed to be a clear way to represent "no result". Using a field with type java.util.Optional is also problematic if the class needs to be Serializable, which java.util.Optional is not.
-____
-
-Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. With Lombok you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
-
-==== Side note: developing intuition about the type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
-
-Method signatures like
-
-[source,java]
-----
-public <U> Optional<U> map(Function<? super T, ? extends U> mapper)
-public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper
-----
-
-aren't so scary when you know the reason for putting the type bounds. Having the following types
-
-[source,java]
-----
-  interface RawMaterial {}
-  interface Steel extends RawMaterial {}
-  interface Vehicle {}
-  interface Car extends Vehicle {}
-----
-
-And the functions
-
-[source,java]
-----
-  RawMaterial rawMaterialObject = new RawMaterial() { };
-  Steel steelObject = new Steel() { };
-  Vehicle vehicleObject = new Vehicle() { };
-  Car carObject = new Car() { };
-
-  Function<Steel, Vehicle> steelToVehicle = steel -> vehicleObject;
-  Function<Steel, Car> steelToCar = steel -> carObject;
-  Function<RawMaterial, Car> rawMaterialToCar = rawMaterial -> carObject;
-  Function<RawMaterial, Vehicle> rawMaterialToVehicle = rawMaterial -> vehicleObject;
-----
-
-And an assignment
-
-[source,java]
-----
-    Optional<Vehicle> vehicle = Optional.of(steelObject).map((Function<? super Steel, ? extends Vehicle>) mapper);
-----
-
-Think what can we put instead of the `mapper`? In other words https://en.wikipedia.org/wiki/Liskov_substitution_principle[what are the subtypes] of `Function<? super Steel, ? extends Vehicle>` and why there's `super` next to the `Steel` and `extends` next to the `Vehicle`?
-
-It turn out the code compiles with each of our mappers
-
-[source,java]
-----
-    Optional<Vehicle> vehicle1 = Optional.of(steelObject).map(steelToVehicle);
-    Optional<Vehicle> vehicle2 = Optional.of(steelObject).map(steelToCar);
-    Optional<Vehicle> vehicle3 = Optional.of(steelObject).map(rawMaterialToCar);
-    Optional<Vehicle> vehicle4 = Optional.of(steelObject).map(rawMaterialToVehicle);
-
-----
-
-Because we can use a function that can produce a `Vehicle` or something more concrete like `Car` from `Steel` and we can't complain if `RawMaterial` is enough for it.
-In other words a function B is a subtype if a function A if the function B returns a subtype of the function A and takes a supertype of the function A.
-And in another words functions are covariant in their return types and contravariant in their input types.
-
-In practice if you see `? super` next to the type you can assume it's some kind of an input and if you see `? extends` you can assume it's come kind of an output.
-
 == What about the processed `Stream` elements?
-A temptation to use mutable state in a `Stream<T>` comes when we need to access a previous element that has already been processed. Say we need to summarize changes in `Customer` objects for auditing purposes. First come up with a  machinery for producing a string with differences between 2 objects.
+A temptation to use mutable state in a `Stream<T>` comes when we need to access a previous element that has already been processed. Say we need to summarize changes in `Customer` objects for auditing purposes.
 
-Here defined is a map of attribute names to their projectors on a customer object
+First, let's come up with a machinery for producing a string describing differences between 2 objects. Here defined is a map of attribute names to their projectors on a customer object
 
 [source,java]
 ----
@@ -296,7 +303,7 @@ Here defined is a map of attribute names to their projectors on a customer objec
   );
 ----
 
-Now let's try to define actual builder of a `String` with changes summary
+Now let's try to define the actual builder of a `String` with changes summary
 
 [source,java]
 ----
@@ -315,7 +322,7 @@ Now let's try to define actual builder of a `String` with changes summary
   }
 ----
 
-(test data placed at the end of this section)
+_(test data at the end of the section)_
 
 [source,java]
 ----
@@ -340,9 +347,25 @@ And the use it
   }
 ----
 
-The `lastValue` constant indicates a strong desire to use Streams but and problem of enforcing that used variables must be declared as final. `AtomicReference<Customer>` is a quick hack for changing for each loop to the _New Fancy Functional Streams™_.
 
-It's a nasty hack, of course. All the promises of simplicity about reasoning about code is thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's valid claim. But in this case it'd be easier to just use a variable and old loops.
+[source,java]
+----
+  private List<String> expectedChangesDescriptions = List.of(
+      "name: Johny Kovalsky -> John Kovalsky",
+      "name: John Kovalsky -> Jan Kowalski | born on: 2014-03-18T12:00Z -> 2019-03-18T12:00Z | is active: true -> false"
+  );
+
+  @Test
+  void customerListDiffWithAtomicReference() {
+    assertThat(Zipping
+        .compareSubsequentChangesWithAtomicReference(customers))
+        .isEqualTo(expectedChangesDescriptions);
+  }
+----
+
+The `lastValue` constant indicates a strong desire to use Streams and problem of enforcing that used variables must be declared as final. `AtomicReference<Customer>` is a quick hack for changing a for-each loop to the _New Fancy Functional Streams™_.
+
+It's a nasty hack, of course. All the promises of simplicity about reasoning about code is thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's a valid claim. But in this case it'd be easier to just use a variable and old loops.
 
 ==== Zipping it
 
@@ -423,7 +446,10 @@ I'll stick with _zero_ name, as this is what the element is called in vavr. We k
 
 After reducing the list to just the state object, we access its `.stateAcc` field which is a vavr `List` and convert it to Java counterpart with `.asJava()`. Notice that `.stateAcc` is not accessed via a getter, but directly. Its intentional because ComparisionState is final, thus getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well, it cannot be changed without reflection. Overall, unless we want to fit in the java bean convention, there's no point of using getters layer.
 
-=== Test data
+---
+
+_Test data used in this section_
+
 [source,java]
 ----
   private Addrees address = Addrees
@@ -586,6 +612,7 @@ And again, this time the complete implementation
 ----
 
 _(test data at the end of the section)_
+
 [source,java]
 ----
   @Test
@@ -695,8 +722,10 @@ Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the w
 
 If we're into asynchronous processing we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). But then be careful not to call `.get` or we'd block the execution. What can be one than is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework of the library expects.
 
+---
 
-Test data used in this section
+_Test data used in this section_
+
 [source,java]
 ----
   io.vavr.collection.List<Customer> testCustomers = io.vavr.collection.List.of(

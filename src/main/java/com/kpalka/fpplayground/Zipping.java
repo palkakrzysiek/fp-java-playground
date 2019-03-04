@@ -52,7 +52,7 @@ class Zipping {
         .collect(Collectors.toList());
   }
 
-  static List<String> compareSubsequentChanges(List<Customer> customerStateSnapshots) {
+  static List<String> compareSubsequentChangesWithVavr(List<Customer> customerStateSnapshots) {
     if (customerStateSnapshots.size() < 2) return Collections.emptyList();
     final var vavrList = io.vavr.collection.List.ofAll(customerStateSnapshots);
     return vavrList

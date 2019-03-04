@@ -63,22 +63,23 @@ class ZippingTest {
 
   @Test
   void customerListDiffWithAtomicReference() {
-    assertThat(Zipping.compareSubsequentChangesWithAtomicReference(customers)).isEqualTo(expectedChangesDescriptions);
-  }
-
-  @Test
-  void customerListDiffWithJavaStdLibTest() {
-    assertThat(Zipping.compareSubsequentChanges(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping
+        .compareSubsequentChangesWithAtomicReference(customers))
+        .isEqualTo(expectedChangesDescriptions);
   }
 
   @Test
   void customerListDiffWithVavrTest() {
-    assertThat(Zipping.compareSubsequentChangesWithAtomicReference(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping
+        .compareSubsequentChangesWithVavr(customers))
+        .isEqualTo(expectedChangesDescriptions);
   }
 
   @Test
   void customerListDiffWithVavrAndFoldLeftTest() {
-    assertThat(Zipping.compareSubsequentChangesWithFoldLeft(customers)).isEqualTo(expectedChangesDescriptions);
+    assertThat(Zipping
+        .compareSubsequentChangesWithFoldLeft(customers))
+        .isEqualTo(expectedChangesDescriptions);
   }
 
   @Test
