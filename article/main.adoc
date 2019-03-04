@@ -1,6 +1,6 @@
 = Dealing with Java quirks while switching to FP style
 
-.CC0/Public domain  | Photo pexels.com/@raghav-rajvanshi-709054 | Edited kpalka.com
+.CC0/Public domain • Photo by pexels.com/@raghav-rajvanshi-709054[Raghav Rajvanshi] • Edited by kpalka.com[Krzysztof Palka]
 [#article_image]
 [caption=""]
 image::article_image.jpg[]
@@ -16,14 +16,14 @@ Yet it looks like the language architects are not convinced if fully embrace tha
 
 This limits the possibility of writing more complicated logic without a nasty mixture of good ol' `try {}` s and mutable elements.
 
-In this article we'll explore a couple of libraries that make it easier to stay with the FP side.
+In this article, we'll explore a couple of libraries that make it easier to stay with the FP side.
 
-_All code examples are provided in https://github.com/palkakrzysiek/fp-java-playground[this github repository]._
+_All code examples are provided in https://github.com/palkakrzysiek/fp-java-playground[this GitHub repository]._
 
 == The basics -- immutable data classes
-It's not an easy task to operate on data classes without a lot of boilerpate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok].
+It's not an easy task to operate on data classes without much boilerplate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok].
 
-The former generates the code with concrete implementations form abstract classes, while with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. I don't mind it as long as IDEs and Maven provides good support the library and as there are more chances you already have it in your project, I'll pick Lombok for the subsequent examples.
+The former generates the code with concrete implementations from abstract classes, while with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. I don't mind it as long as IDEs and Maven provide good support the library and as there are more chances you already have it in your project, I'll pick Lombok for the subsequent examples.
 
 === How to live without setters
 
@@ -60,11 +60,11 @@ class Customer {
 
 Here, the `@Value` annotation creates all the necessary methods (assuming setters are not necessary) to be used in the immutable class. To use it in IntelliJ you must turn on annotation processors in settings.
 
-So far so good. The problem appears when one wants to change a single field in an object. Normally it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
+So far so good. The problem appears when one wants to change a single field in an object. Typically it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
 
-To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. Mentioned annotation allows to summon the builder with pre-filled fields from an existing object.
+To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. Mentioned annotation allows summoning the builder with pre-filled fields from an existing object.
 
-As an simple example let's use the builder to solve a task of deactivating all users in a list.
+As a simple example let's use the builder to solve a task of deactivating all users in a list.
 
 [source,java]
 ----
@@ -169,13 +169,13 @@ We can compare the original and new values in the log statement, as the objects 
 Unfortunately, the `java.util.List` itself is mutable. The caller of the `normalizeCountry` method doesn't know if it won't mess with the parameter structure by adding or removing elements. We'll address it later.
 
 ==== Side note: `Optional<T>` as a field
-When you try to use `Optional<T>` as a field in IntelliJ you'll be greeted with a warning
+When you try to use `Optional<T>` as a field in IntelliJ, you'll be greeted with a warning
 
 ____
 Inspection info: Reports any uses of java.util.Optional<T>, java.util.OptionalDouble, java.util.OptionalInt, java.util.OptionalLong or com.google.common.base.Optional as the type for a field or a parameter. Optional was designed to provide a limited mechanism for library method return types where there needed to be a clear way to represent "no result". Using a field with type java.util.Optional is also problematic if the class needs to be Serializable, which java.util.Optional is not.
 ____
 
-Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. The Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. With Lombok you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
+Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. The Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. With Lombok, you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
 
 ==== Side note: honing intuition about type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
 
@@ -219,7 +219,7 @@ and an assignment...
     Optional<Vehicle> vehicle = Optional.of(steelObject).map((Function<? super Steel, ? extends Vehicle>) mapper);
 ----
 
-Think what can we put instead of the `mapper`? In other words https://en.wikipedia.org/wiki/Liskov_substitution_principle[what are the subtypes] of `Function<? super Steel, ? extends Vehicle>` and why there's `super` next to the `Steel` and `extends` next to the `Vehicle`?
+Think about what we can put instead of the `mapper`? In other words, https://en.wikipedia.org/wiki/Liskov_substitution_principle[what are the subtypes] of `Function<? super Steel, ? extends Vehicle>` and why there's `super` next to the `Steel` and `extends` next to the `Vehicle`?
 
 It turns out the code compiles with all our mappers.
 
@@ -238,7 +238,7 @@ In other words, a function B is a subtype of a function A if the function B retu
 
 And in another words functions are covariant in their return types and contravariant in their input types.
 
-In practice if you see `? super` next to a type you can assume it's some kind of an input and if you see `? extends` you can assume it's come kind of an output.
+In practice, if you see `? super` next to a type you can assume it's some input and if you see `? extends` you can assume it's of an output.
 
 ---
 
@@ -285,7 +285,7 @@ _Test data used in this section_
 == What about the processed `Stream` elements?
 A temptation to use mutable state in a `Stream<T>` comes when we need to access a previous element that has already been processed. Say we need to summarize changes in `Customer` objects for auditing purposes.
 
-First, let's come up with a machinery for producing a string describing differences between 2 objects. Here defined is a map of attribute names to their projectors on a customer object
+First, let's come up with machinery for producing a string describing differences between 2 objects. Here defined is a map of attribute names to their projectors on a customer object
 
 [source,java]
 ----
@@ -365,7 +365,7 @@ And then use it
 
 The `lastValue` constant indicates a strong desire to use Streams and problem of enforcing that used variables must be declared as final. `AtomicReference<Customer>` is a quick hack for changing a for-each loop to the _New Fancy Functional Streams™_.
 
-It's a nasty hack, of course. All the promises of simplicity about reasoning about code is thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's a valid claim. But in this case it'd be easier to just use a variable and old loops.
+It's a nasty hack, of course. All the promises of simplicity about reasoning about code are thrown away when one needs to keep track of all the places where a variable can be mutated. One can argue that it's not a big deal when the mutable state isn't leaked outside such a method, and it's a valid claim. However, in this case, it'd be easier to just use a variable and old loops.
 
 ==== Zipping it
 
@@ -373,7 +373,7 @@ An easy way to compare two subsequent elements is to combine two streams -- the 
 
 I'll be addressing vavr classes with fully qualified package names (`io.vavr. ...`) to avoid confusion which class in the code example belongs to the standard Java, and which does not. Normally, you can import vavr counterparts of Java classes to make the code more succinct.
 
-Here's how once can achieve the goal with vavr's `List`
+Here's how one can achieve the goal with vavr's `List`
 
 [source,java]
 ----
@@ -386,13 +386,13 @@ Here's how once can achieve the goal with vavr's `List`
   }
 ----
 
-First, Java's `List` is changed to vavr's one. Then in the https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[zipWith] the original collection is combined with the one without the first element using `Zipping::customerDiff` as a method taking two elements, one from each collection, and returning the result. It's worth to check other https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[methods provided by vavr collections] which can be missing in Java's `Stream`.
+First, Java's `List` is changed to vavr's one. Then in the https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[zipWith], the original collection is combined with the one without the first element using `Zipping::customerDiff` as a method taking two elements, one from each collection, and returning the result. It's worth to check other https://static.javadoc.io/io.vavr/vavr/0.9.0/io/vavr/collection/List.html#zipWith-java.lang.Iterable-java.util.function.BiFunction-[methods provided by vavr collections] which can be missing in Java's `Stream`.
 
-Note that creating a lazy `Stream` and then `.collect` ing the result is not obligatory in vavr's collections. This allows to clean up the code logic. If one switches to vavr completely, `.asJava()` becomes unnecessary as well.
+Note that creating a lazy `Stream` and then `.collect` ing the result is not obligatory in vavr's collections. This allows us to clean up the code logic. If one switches to vavr completely, `.asJava()` becomes unnecessary as well.
 
 === Generalizing with foldX
 
-Let's now use more universal mechanism when we want to access any state that in an imperative style would be a variable(s) updated in a loop.
+Let's now use universal mechanism when we want to access any state that in an imperative style would be a variable(s) updated in a loop.
 
 [source,java]
 ----
@@ -447,9 +447,9 @@ It could be simplified if there was a type like `NonEmptyList` with `foldLeft` n
 
 Because the list used in `stateAcc` is immutable (like all vavr collections), the `append` method executed on it returns a new list leaving the original intact, so we don't need to worry about it.
 
-After reducing the list to just the state object, we access its `.stateAcc` field, and because it is a vavr `List` we convert it to the Java counterpart with `.asJava()` to match the expected return type.
+After reducing the list to just the state object, we access its `.stateAcc` field, and because it is a vavr `List`, we convert it to the Java counterpart with `.asJava()` to match the expected return type.
 
-Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisionState` is final, thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well, it cannot be changed without using reflection.
+Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisionState` is final; thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well; it cannot be changed without using reflection.
 
 Overall, unless we want to fit in the java bean convention, there's no point of using a getters layer.
 
@@ -567,7 +567,7 @@ ____
         .stream()
         .map(aHackYouCanSometimesSpot)
 
-        // ... and when you see such a call to service as a fragment of stream pipeline you should smell something bad. Things can fail. In a nasty way. And I think such situations make some people, softly said, not very willing to incorporate the newer features of the language to their daily usage
+        // ... and when you see such a call to service as a fragment of stream pipeline, you should smell something bad. Things can fail. In a nasty way. And I think such situations make some people, softly said, not very willing to incorporate the newer features of the language to their daily usage
 
 
         // the rest of processing
@@ -651,11 +651,11 @@ _(test data at the end of the section)_
   }
 ----
 
-It's worth noticing the (over)complicated `reduce` available in Java's Stream. Compared to the `foldLeft` available in vavr, in `reduce` we have two stages. The first is the same as in `foldLeft`, the second combines the states produced by the first stage.
+It's worth noticing the (over)complicated `reduce` available in Java's Stream. Compared to the `foldLeft` available in vavr, in `reduce`, we have two stages. The first is the same as in `foldLeft`; the second combines the states produced by the first stage.
 
-In the first, the new accumulated state is dependent on the previous previous value of the stream. In the second, states can be combined independently, which means they can be paralleled. It's great if you need it. If you don't you have to deal with the burden of defining additional binary operation, here `AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter)` next to `AvgPeriodCounter plus(Period period)`. So if we already have the whole list in memory, using `foldX` seams to be a sexier solution than `reduce`.
+In the first, the new accumulated state is dependent on the previous value of the stream. In the second, states can be combined independently, which means they can be parallelized. It's great if you need it. If you don't you have to deal with the burden of defining additional binary operation, here `AvgPeriodCounter plus(AvgPeriodCounter avgPeriodCounter)` next to `AvgPeriodCounter plus(Period period)`. So if we already have the whole list in memory, using `foldX` seams to be a sexier solution than `reduce`.
 
-Now it's time to tame the method calls that can fail. vavr offers Try<T> and Either<E, T> classes with which you can inform about possible failre in the return type. `Either` is more powerful as you can put in `Left` (failure) part anything signaling the error. `Try` can be seen as
+Now it's time to tame the method calls that can fail. vavr offers Try<T> and Either<E, T> classes with which you can inform about a possible failure in the return type. `Either` is more powerful as you can put in `Left` (failure) part anything signaling the error. `Try` can be seen as
 
 [source,java]
 ----
@@ -670,7 +670,7 @@ So the errors can be only a (sub)instance of `Throwable`. Say it's good enough f
       return Try.of(() -> getByNameOptionalThrowing(name));
 ----
 
-Notice that there's no `throws ServiceException` in the method signature, which means it can be used within `Stream`. Notice that the  `getByNameOptionalThrowing(name)` call is now wrapped in a lambda expression. Without it the exception would be thrown immediately, before vavr had a chance to wrap call execution into `Try.Success` or `Try.Failure`.
+Notice that there's no `throws ServiceException` in the method signature, which means it can be used within `Stream`. Notice that the  `getByNameOptionalThrowing(name)` call is now wrapped in a lambda expression. Without it, the exception would be thrown immediately, before vavr had a chance to wrap call execution into `Try.Success` or `Try.Failure`.
 
 Now we're ready to use the new method of the service.
 
@@ -724,9 +724,9 @@ in the client code of this method you can add on the result
   }
 ----
 
-The first thing here is to use `Try.traverse` instead of mapping each name in the list like `name -> cs.getByNameWithTry(name)`. With the latter we'd end up with `Stream<Try<Optional<Customer>>>` and what we're interested in is a kind of `Try<Stream<Optional<Customer>>>`, so that we have a `Stream<Optional<Customer>>` to process. The `traverse` method does the job of "flipping" a `Stream`, or actually `Seq`, with `Try`.
+The first thing here is to use `Try.traverse` instead of mapping each name in the list like `name -> cs.getByNameWithTry(name)`. With the latter, we'd end up with `Stream<Try<Optional<Customer>>>` and what we're interested in is a kind of `Try<Stream<Optional<Customer>>>`, so that we have a `Stream<Optional<Customer>>` to process. The `traverse` method does the job of "flipping" a `Stream`, or actually `Seq`, with `Try`.
 
-With a simplification it can be thought of as
+With a simplification, it can be thought of as
 
 [source,java]
 ----
@@ -741,7 +741,7 @@ If any of the `flatMap` s end with `Try.Failure` (here if the `Try.of(() -> ...)
 
 Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the way we can call `map` and `flatMap`, plus some specific method like `onFailure`, `onSuccess`, `recover`, and `recoverWith`. So we're mapping a `Seq` of customers to their ages and reducing those to an average. The result can be processed further with `map` s and `flatMap` s, or we can finally call `.get()` first ensuring ourselves with `.isSuccess()` if the call succeeded.
 
-If we're into asynchronous processing we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). But then we must be careful not to call `.get` or we'd block the execution. What can be done is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework of the library expects.
+If we're into asynchronous processing, we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). However, then we must be careful not to call `.get` or we'd block the execution. What can be done is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework of the library expects.
 
 ---
 
@@ -772,7 +772,7 @@ _Test data used in this section_
 = Summary
 With some external libraries writing with functional style in Java becomes less painful. In examples above we didn't separate the program definition from its execution, which is difficult in a language without https://softwaremill.com/free-tagless-compared-how-not-to-commit-to-monad-too-early/[higher-kinded types] or a library like https://arrow-kt.io/docs/patterns/monads/[Arrow] for Kotlin.
 
-Nonetheless without mixing pre-java8 and post-lambda style (not using mutable collections, data structures, nor variables) we obtain a code that is easy to reason about. A topic worth exploring for now http://blog.vavr.io/pattern-matching-essentials/[that's already available in vavr] and https://openjdk.java.net/jeps/8213076[may be in future added to Java] is pattern matching. It can simplify code like
+Nonetheless, without mixing pre-java8 and post-lambda style (not using mutable collections, data structures, nor variables), we obtain a code that is easy to reason about. A topic worth exploring for now http://blog.vavr.io/pattern-matching-essentials/[that's already available in vavr] and https://openjdk.java.net/jeps/8213076[may be in future added to Java] is pattern matching. It can simplify code like
 
 [source,java]
 ----
@@ -789,5 +789,7 @@ with
 ----
 and the more complicated filtering conditions and transforming logic, the more pattern matching cleans up the code.
 
-Let me know what you're thoughts on this article and in general the topic of FP in Java because I'm curious if it's a goal worth striving for :)
+Big thank you goes to https://twitter.com/pawelwlodarski[Paweł Włodarski], who encouraged me to write this article; https://github.com/pioluk[Piotr Łukomiak], who thoroughly reviewed and corrected it, and users of JVM-Poland Slack group for ideas.
+
+Let me know what you're thoughts on this article and in general, the topic of FP in Java because I'm curious if it's a goal worth striving for :)
 
