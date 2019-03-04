@@ -238,7 +238,7 @@ In other words, a function B is a subtype of a function A if the function B retu
 
 And in another words functions are covariant in their return types and contravariant in their input types.
 
-In practice if you see `? super` next to the type you can assume it's some kind of an input and if you see `? extends` you can assume it's come kind of an output.
+In practice if you see `? super` next to a type you can assume it's some kind of an input and if you see `? extends` you can assume it's come kind of an output.
 
 ---
 
