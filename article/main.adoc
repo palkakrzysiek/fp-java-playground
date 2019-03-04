@@ -44,17 +44,17 @@ class Customer {
   @Value
   @Builder(toBuilder = true)
   static class Addrees {
-    private Optional<String> line1;
-    private Optional<String> line2;
-    private Optional<String> zipCode;
-    private Optional<String> city;
-    private Optional<String> country;
+    Optional<String> line1;
+    Optional<String> line2;
+    Optional<String> zipCode;
+    Optional<String> city;
+    Optional<String> country;
   }
 
-  private String name;
-  private Addrees address;
-  private ZonedDateTime bornOn;
-  private Boolean active;
+  String name;
+  Addrees address;
+  ZonedDateTime bornOn;
+  Boolean active;
 }
 ----
 
@@ -291,8 +291,8 @@ First, let's come up with a machinery for producing a string describing differen
 ----
   @Value
   private static class ComparableAttribute {
-    private String name;
-    private Function<Customer, String> getter;
+    String name;
+    Function<Customer, String> getter;
   }
 
   private static final List<ComparableAttribute> COMPARABLE_ATTRIBUTES = List.of(

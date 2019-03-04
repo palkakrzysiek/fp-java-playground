@@ -16,8 +16,8 @@ class Zipping {
 
   @Value
   private static final class ComparableAttribute {
-    final String name;
-    final Function<Customer, String> getter;
+    String name;
+    Function<Customer, String> getter;
   }
 
   private static final List<ComparableAttribute> COMPARABLE_ATTRIBUTES = List.of(
@@ -62,8 +62,8 @@ class Zipping {
 
   @Value
   private static final class ComparisionState {
-    final Customer lastVale;
-    final io.vavr.collection.List<String> stateAcc;
+    Customer lastVale;
+    io.vavr.collection.List<String> stateAcc;
   }
 
   static List<String> compareSubsequentChangesWithFoldLeft(List<Customer> customerStateSnapshots) {
