@@ -12,7 +12,8 @@ _originally posted on the https://bulldogjob.com/companies/profiles/679-idemia[I
 Functional programming promises easy testing and unproblematic reasoning about the execution flow – without surprising exceptions, hard-to-track variables and collections mutations, nor coupling the program definition with interpretation.
 
 Thus Java constantly gains more features supporting writing code in functional style, starting with 2014's addition of lambdas and streams of collection elements.
-Yet it looks like the language architects are not convinced if fully embrace that trend by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can carry information about a failure like `Try<T>` or `Either<E, T>`.
+
+Yet it looks like the language architects are not convinced whether fully embrace that style by not providing basic combinator methods (`zip`, `zipWith`, `fold`) with existing `Optional<T>` and `Stream<T>` classes, nor classes that can carry information about a failure like `Try<T>` or `Either<E, T>`.
 
 This limits the possibility of writing more complicated logic without a nasty mixture of good ol' `try {}` s and mutable elements.
 
@@ -23,7 +24,7 @@ _All code examples and AsciiDoc version of this article are provided in https://
 == The basics -- immutable data classes
 It's not an easy task to operate on data classes without much boilerplate. Getters, builders, equals and hashcode methods can take more space than the data of interests itself. A notable library to cut out the boilerplate is https://mvnrepository.com/artifact/org.immutables/value[Immutables]. A well known, yet controversial library is https://mvnrepository.com/artifact/org.projectlombok/lombok[Lombok].
 
-The former generates the code with concrete implementations from abstract classes, while with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. I don't mind it as long as IDEs and Maven provide good support the library and as there are more chances you already have it in your project, I'll pick Lombok for the subsequent examples.
+The former generates the code with concrete implementations from abstract classes, while with the latter you'll end up with a different bytecode in your _*.class_ files than in your _*.java_ ones. I don't mind it as long as IDEs and Maven provide good support of the library and as there are more chances you already have it in your project, I'll pick Lombok for the subsequent examples.
 
 === How to live without setters
 
@@ -62,7 +63,7 @@ Here, the `@Value` annotation creates all the necessary methods (assuming setter
 
 So far so good. The problem appears when one wants to change a single field in an object. Typically it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
 
-To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. Mentioned annotation allows summoning the builder with pre-filled fields from an existing object.
+To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. The annotation allows obtaining the builder with pre-filled fields from an existing object.
 
 As a simple example let's use the builder to solve a task of deactivating all users in a list.
 
