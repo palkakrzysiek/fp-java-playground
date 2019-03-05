@@ -61,7 +61,7 @@ class Customer {
 
 Here, the `@Value` annotation creates all the necessary methods (assuming setters are not necessary) to be used in the immutable class. To use it in IntelliJ you must turn on annotation processors in settings.
 
-So far so good. The problem appears when one wants to change a single field in an object. Typically it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add getters by switching `@Value` to `@Data`.
+So far so good. The problem appears when one wants to change a single field in an object. Typically it'd require rewriting all the parameters from the old object to the constructor of the class. It's quite a tedious task and a temptation to add setters by switching `@Value` to `@Data`.
 
 To ease the pain of "mutating" immutable objects one can add a builder with `toBuilder` argument set to `true`. Unfortunately, it's not a default value. The annotation allows obtaining the builder with pre-filled fields from an existing object.
 
@@ -172,9 +172,9 @@ Unfortunately, the `java.util.List` itself is mutable. The caller of the `normal
 ==== Side note: `Optional<T>` as a field
 When you try to use `Optional<T>` as a field in IntelliJ, you'll be greeted with a warning
 
-____
+----
 Inspection info: Reports any uses of java.util.Optional<T>, java.util.OptionalDouble, java.util.OptionalInt, java.util.OptionalLong or com.google.common.base.Optional as the type for a field or a parameter. Optional was designed to provide a limited mechanism for library method return types where there needed to be a clear way to represent "no result". Using a field with type java.util.Optional is also problematic if the class needs to be Serializable, which java.util.Optional is not.
-____
+----
 
 Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of the inspection rule] written by https://www.linkedin.com/in/briangoetz/[Brian Goetz]. The Usage of `Optional` here is fine for our purpose. Libraries like https://github.com/FasterXML/jackson[Jackson] can deal with (de)serialization. With Lombok, you need to use https://github.com/FasterXML/jackson-modules-java8[jackson-modules-java8].
 
@@ -450,7 +450,7 @@ Because the list used in `stateAcc` is immutable (like all vavr collections), th
 
 After reducing the list to just the state object, we access its `.stateAcc` field, and because it is a vavr `List`, we convert it to the Java counterpart with `.asJava()` to match the expected return type.
 
-Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisionState` is final; thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well; it cannot be changed without using reflection.
+Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisionState` is `final` (here added explicitly, but Lombok's `@Value` adds `final` and `private` modifiers anyway); thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well; it cannot be changed without using reflection.
 
 Overall, unless we want to fit in the java bean convention, there's no point of using a getters layer.
 
@@ -537,10 +537,11 @@ The first attempt...
 ----
 
 ...and a disappointment
-____
+
+----
 Error:(77, 52) java: unreported exception com.kpalka.fpplayground.FailableBehaviour.CustomerService.ServiceException; must be caught or declared to be thrown
 Error:(80, 7) java: exception com.kpalka.fpplayground.FailableBehaviour.CustomerService.ServiceException is never thrown in body of corresponding try statement
-____
+----
 
 `.map` won't accept something that throws a checked exception. So the second attempt
 
@@ -790,7 +791,7 @@ with
 ----
 and the more complicated filtering conditions and transforming logic, the more pattern matching cleans up the code.
 
-Big thank you goes to https://twitter.com/pawelwlodarski[Paweł Włodarski], who encouraged me to write this article; https://github.com/pioluk[Piotr Łukomiak] and https://www.linkedin.com/in/annaskawinska/[Anna Skawińska], who thoroughly reviewed and corrected it; and users of JVM-Poland Slack group for ideas!
+Big thank you goes to https://twitter.com/pawelwlodarski[Paweł Włodarski], who encouraged me to write this article; https://twitter.com/pioluk[Piotr Łukomiak] and https://twitter.com/annaskawinska[Anna Skawińska], who thoroughly reviewed and corrected it; and users of JVM-Poland Slack group for ideas!
 
 Let me know what you're thoughts on this article and in general, the topic of FP in Java because I'm curious if it's a goal worth striving for :)
 
