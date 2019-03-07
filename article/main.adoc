@@ -393,24 +393,24 @@ Note that creating a lazy `Stream` and then `.collect` ing the result is not obl
 
 === Generalizing with foldX
 
-Let's now use universal mechanism when we want to access any state that in an imperative style would be a variable(s) updated in a loop.
+Let's now use a universal mechanism when we want to access any state that in an imperative style would be a variable(s) updated in a loop.
 
 [source,java]
 ----
   @Value
-  private static final class ComparisionState {
+  private static final class ComparisonState {
     final Customer lastVale;
     final io.vavr.collection.List<String> stateAcc;
   }
 
   static List<String> compareSubsequentChangesWithFoldLeft(List<Customer> customerStateSnapshots) {
     if (customerStateSnapshots.size() < 2) return Collections.emptyList();
-    final var zero = new ComparisionState(customerStateSnapshots.get(0), io.vavr.collection.List.empty());
+    final var zero = new ComparisonState(customerStateSnapshots.get(0), io.vavr.collection.List.empty());
     final var vavrList = io.vavr.collection.List.ofAll(customerStateSnapshots);
     return vavrList
         .drop(1)
-        .foldLeft(zero, (ComparisionState foldAcc, Customer c) ->
-            new ComparisionState(c, foldAcc.stateAcc.append(customerDiff(foldAcc.lastVale, c))))
+        .foldLeft(zero, (ComparisonState foldAcc, Customer c) ->
+            new ComparisonState(c, foldAcc.stateAcc.append(customerDiff(foldAcc.lastVale, c))))
         .stateAcc
         .asJava();
   }
@@ -450,7 +450,7 @@ Because the list used in `stateAcc` is immutable (like all vavr collections), th
 
 After reducing the list to just the state object, we access its `.stateAcc` field, and because it is a vavr `List`, we convert it to the Java counterpart with `.asJava()` to match the expected return type.
 
-Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisionState` is `final` (here added explicitly, but Lombok's `@Value` adds `final` and `private` modifiers anyway); thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well; it cannot be changed without using reflection.
+Notice that `.stateAcc` is not accessed via a getter, but directly. It's intentional because `ComparisonState` is `final` (here added explicitly, but Lombok's `@Value` adds `final` and `private` modifiers anyway); thus a getter cannot be overridden and return something different in a subclass. `.stateAcc` itself is final as well; it cannot be changed without using reflection.
 
 Overall, unless we want to fit in the java bean convention, there's no point of using a getters layer.
 
@@ -648,7 +648,7 @@ _(test data at the end of the section)_
   @Test
   void countAvgThrowing() {
     assertThatThrownBy(() -> FailableBehaviour.getAvgAge(cs, List.of(errorProneCustomer), now))
-        .describedAs("Method can throw an expected error, but doesn't inform that it can fail in any way. Additionally, meaningful ServiceException is wrapped very generic RuntimeException")
+        .describedAs("Method can throw an expected error, but doesn't inform that it can fail in any way. Additionally, meaningful ServiceException is wrapped in a very generic RuntimeException")
         .isExactlyInstanceOf(RuntimeException.class);
   }
 ----
@@ -664,7 +664,7 @@ Now it's time to tame the method calls that can fail. vavr offers Try<T> and Eit
     interface Try<T> extends Either<Throwable, T> {}
 ----
 
-So the errors can be only a (sub)instance of `Throwable`. Say it's good enough for now. Let's add to the `CustomerService` the following method
+So the errors can be only a (sub)instance of `Throwable`. Say it's good enough for now. Let's add the following method to `CustomerService`
 
 [source,java]
 ----
@@ -743,7 +743,7 @@ If any of the `flatMap` s end with `Try.Failure` (here if the `Try.of(() -> ...)
 
 Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the way we can call `map` and `flatMap`, plus some specific method like `onFailure`, `onSuccess`, `recover`, and `recoverWith`. So we're mapping a `Seq` of customers to their ages and reducing those to an average. The result can be processed further with `map` s and `flatMap` s, or we can finally call `.get()` first ensuring ourselves with `.isSuccess()` if the call succeeded.
 
-If we're into asynchronous processing, we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). However, then we must be careful not to call `.get` or we'd block the execution. What can be done is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework or library expects.
+If we're into asynchronous processing, we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). However, then we must be careful not to call `.get` or we'd block the execution. What we can do is use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework or library expects.
 
 ---
 
@@ -772,7 +772,7 @@ _Test data used in this section_
 ----
 
 = Summary
-With some external libraries writing with functional style in Java becomes less painful. In examples above we didn't separate the program definition from its execution, which is difficult in a language without https://softwaremill.com/free-tagless-compared-how-not-to-commit-to-monad-too-early/[higher-kinded types] or a library like https://arrow-kt.io/docs/patterns/monads/[Arrow] for Kotlin.
+There are some external libraries which make writing the functional style in Java less painful. In examples above we didn't separate the program definition from its execution, which is difficult in a language without https://softwaremill.com/free-tagless-compared-how-not-to-commit-to-monad-too-early/[higher-kinded types] or a library like https://arrow-kt.io/docs/patterns/monads/[Arrow] for Kotlin.
 
 Nonetheless, without mixing pre-java8 and post-lambda style (not using mutable collections, data structures, nor variables), we obtain a code that is easy to reason about. A topic worth exploring for now http://blog.vavr.io/pattern-matching-essentials/[that's already available in vavr] and https://openjdk.java.net/jeps/8213076[may be in future added to Java] is pattern matching. It can simplify code like
 
@@ -789,9 +789,9 @@ with
         Case(Some($()), t -> t)
     )
 ----
-and the more complicated filtering conditions and transforming logic, the more pattern matching cleans up the code.
+Generally, the more the filtering conditions and transforming logic are complicated, the more pattern matching can clean up the code.
 
 Big thank you goes to https://twitter.com/pawelwlodarski[Paweł Włodarski], who encouraged me to write this article; https://twitter.com/pioluk[Piotr Łukomiak] and https://twitter.com/annaskawinska[Anna Skawińska], who thoroughly reviewed and corrected it; and users of JVM-Poland Slack group for ideas!
 
-Let me know what you're thoughts on this article and in general, the topic of FP in Java because I'm curious if it's a goal worth striving for :)
+Let me know your thoughts on this article and the topic of FP in Java in general because I'm curious if it's a goal worth striving for :)
 
