@@ -180,7 +180,7 @@ Don't panic. https://stackoverflow.com/a/26328555[Here's a possible source of th
 
 ==== Side note: honing intuition about type bounds of generics in methods taking `Function<? super T, ? extends R>` as a parameter
 
-You'll encounter a lot of method signatures like
+You'll encounter many method signatures like
 
 [source,java]
 ----
@@ -188,7 +188,7 @@ public <U> Optional<U> map(Function<? super T, ? extends U> mapper)
 public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper
 ----
 
-while reading the documentation of vavr. Such signatures aren't so scary when you know the reason for putting the type bounds. Having the following types...
+while reading documentation of functional libraries. Such signatures aren't so scary when you know the reason for putting the type bounds. Having the following types...
 
 [source,java]
 ----
@@ -743,7 +743,7 @@ If any of the `flatMap` s end with `Try.Failure` (here if the `Try.of(() -> ...)
 
 Back to the logic. Later, the `Try<T>` behaves similarly to `Option<T>` in the way we can call `map` and `flatMap`, plus some specific method like `onFailure`, `onSuccess`, `recover`, and `recoverWith`. So we're mapping a `Seq` of customers to their ages and reducing those to an average. The result can be processed further with `map` s and `flatMap` s, or we can finally call `.get()` first ensuring ourselves with `.isSuccess()` if the call succeeded.
 
-If we're into asynchronous processing, we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). However, then we must be careful not to call `.get` or we'd block the execution. What can be done is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework of the library expects.
+If we're into asynchronous processing, we can switch `Try` to `Future` (the vavr's one, not the Java one which has method naming inconsistent with `Stream`/`Option` part). However, then we must be careful not to call `.get` or we'd block the execution. What can be done is to use `.onSuccess` and `.onFailure` to complete the `Promise` of whatever framework or library expects.
 
 ---
 
